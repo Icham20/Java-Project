@@ -1,0 +1,6 @@
+target/
+*.class
+.git/
+.idea/
+pom.xml.releaseBackup
+release.properties
