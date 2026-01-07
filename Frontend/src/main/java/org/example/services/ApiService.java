@@ -1,4 +1,4 @@
-package org.example.service;
+package org.example.services;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ApiService {
-    private final String BASE_URL = "http://localhost:7000";
+    private final String BASE_URL = "http://localhost:7000/api";
     private final ObjectMapper mapper = new ObjectMapper();
 
     public List<Category> getCategories() {
@@ -31,6 +31,8 @@ public class ApiService {
             try (CloseableHttpResponse response = client.execute(request)) {
                 return mapper.readValue(response.getEntity().getContent(), new TypeReference<List<Product>>(){});
             }
-        } catch (Exception e) { return new ArrayList<>(); }
+        } catch (Exception e) {
+            e.printStackTrace(); // <-- affiche l'erreur
+            return new ArrayList<>(); }
     }
 }

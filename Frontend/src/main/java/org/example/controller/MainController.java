@@ -10,8 +10,8 @@ import javafx.scene.shape.Rectangle;
 import org.example.model.CartItem;
 import org.example.model.Category;
 import org.example.model.Product;
-import org.example.service.ApiService;
-import org.example.service.CartService;
+import org.example.services.ApiService;
+import org.example.services.CartService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +43,7 @@ public class MainController {
         showHomeScreen();
     }
 
-    // --- 1. ACCUEIL ---
+    // --- 1. ÉCRAN D'ACCUEIL ---
     private void showHomeScreen() {
         VBox root = new VBox(50);
         root.setAlignment(Pos.CENTER);
@@ -88,11 +88,12 @@ public class MainController {
         return b;
     }
 
-    // --- 2. MENU ---
+    // --- 2. ÉCRAN DU MENU ---
     private void showMenuScreen() {
         BorderPane menuLayout = new BorderPane();
         menuLayout.setPadding(new Insets(20, 40, 20, 40));
 
+        // --- EN-TÊTE ---
         HBox header = new HBox(30);
         header.setAlignment(Pos.CENTER_LEFT);
         header.setPadding(new Insets(0, 0, 20, 0));
@@ -104,16 +105,28 @@ public class MainController {
         tabs.setAlignment(Pos.CENTER);
         HBox.setHgrow(tabs, Priority.ALWAYS);
 
+        // Récupérer les catégories depuis l'API
         List<Category> categories = apiService.getCategories();
-        if(categories.isEmpty()) mockCategories(categories);
-        if(currentCategory == null && !categories.isEmpty()) currentCategory = categories.get(0);
 
+        if (categories.isEmpty()) {
+            showErrorScreen("Impossible de récupérer les catégories depuis le serveur.");
+            return;
+        }
+
+        // Sélectionner la première catégorie par défaut
+        if (currentCategory == null) {
+            currentCategory = categories.get(0);
+        }
+
+        // Créer les onglets des catégories
         for (Category cat : categories) {
             Button tab = new Button(cat.getName());
             tab.getStyleClass().add("tab-button");
-            if (currentCategory != null && currentCategory.getId().equals(cat.getId())) {
+
+            if (currentCategory.getId().equals(cat.getId())) {
                 tab.getStyleClass().add("tab-active");
             }
+
             tab.setOnAction(e -> {
                 currentCategory = cat;
                 showMenuScreen();
@@ -121,6 +134,7 @@ public class MainController {
             tabs.getChildren().add(tab);
         }
 
+        // Bouton panier dans l'en-tête
         Button btnCartTop = new Button("🛒 " + String.format("%.2f €", cartService.getTotal()));
         btnCartTop.getStyleClass().add("btn-primary");
         btnCartTop.setOnAction(e -> showCartScreen());
@@ -128,24 +142,38 @@ public class MainController {
         header.getChildren().addAll(lblMenu, tabs, btnCartTop);
         menuLayout.setTop(header);
 
-        TilePane grid = new TilePane();
-        grid.setHgap(30); grid.setVgap(30);
-        grid.setPrefColumns(2);
-        grid.setAlignment(Pos.TOP_CENTER);
-        grid.setPadding(new Insets(20));
-
+        // --- CONTENU CENTRAL : PRODUITS ---
         List<Product> products = apiService.getProductsByCategory(currentCategory.getId());
-        if(products.isEmpty()) mockProducts(products, currentCategory.getId());
 
-        for (Product p : products) {
-            grid.getChildren().add(createProductCard(p));
+        if (products.isEmpty()) {
+            VBox noProductsBox = new VBox(20);
+            noProductsBox.setAlignment(Pos.CENTER);
+            noProductsBox.setPadding(new Insets(50));
+
+            Label noProductsLabel = new Label("Aucun produit disponible dans cette catégorie.");
+            noProductsLabel.setStyle("-fx-text-fill: #64748b; -fx-font-size: 18px;");
+
+            noProductsBox.getChildren().add(noProductsLabel);
+            menuLayout.setCenter(noProductsBox);
+        } else {
+            TilePane grid = new TilePane();
+            grid.setHgap(30);
+            grid.setVgap(30);
+            grid.setPrefColumns(2);
+            grid.setAlignment(Pos.TOP_CENTER);
+            grid.setPadding(new Insets(20));
+
+            for (Product product : products) {
+                grid.getChildren().add(createProductCard(product));
+            }
+
+            ScrollPane scroll = new ScrollPane(grid);
+            scroll.setFitToWidth(true);
+            scroll.setStyle("-fx-background-color: transparent; -fx-background: transparent;");
+            menuLayout.setCenter(scroll);
         }
 
-        ScrollPane scroll = new ScrollPane(grid);
-        scroll.setFitToWidth(true);
-        scroll.setStyle("-fx-background-color: transparent; -fx-background: transparent;");
-        menuLayout.setCenter(scroll);
-
+        // --- PIED DE PAGE ---
         HBox footer = new HBox(20);
         footer.setPadding(new Insets(20, 0, 0, 0));
         footer.setAlignment(Pos.CENTER_LEFT);
@@ -168,51 +196,76 @@ public class MainController {
         mainLayout.setCenter(menuLayout);
     }
 
-    private HBox createProductCard(Product p) {
+    private HBox createProductCard(Product product) {
         HBox card = new HBox(20);
         card.getStyleClass().add("product-card");
         card.setPrefWidth(550);
         card.setAlignment(Pos.CENTER_LEFT);
 
+        // Placeholder pour l'image (pourrait être remplacé par une vraie image)
         Rectangle imgPlace = new Rectangle(140, 140, Color.web("#f1f5f9"));
-        imgPlace.setArcWidth(20); imgPlace.setArcHeight(20);
+        imgPlace.setArcWidth(20);
+        imgPlace.setArcHeight(20);
 
+        // Informations du produit
         VBox info = new VBox(10);
         HBox.setHgrow(info, Priority.ALWAYS);
         info.setAlignment(Pos.CENTER_LEFT);
 
-        Label name = new Label(p.getName());
+        Label name = new Label(product.getName());
         name.getStyleClass().add("h2");
         name.setStyle("-fx-font-size: 24px;");
 
-        Label desc = new Label(p.getDescription());
+        Label desc = new Label(product.getDescription());
         desc.setWrapText(true);
         desc.setStyle("-fx-text-fill: #64748b;");
 
+        // Indicateurs épicé/végétarien (optionnels)
+        HBox indicators = new HBox(10);
+        if (product.isSpicy()) {
+            Label spicyLabel = new Label("🌶️ Épicé");
+            spicyLabel.setStyle("-fx-text-fill: #dc2626; -fx-font-size: 14px;");
+            indicators.getChildren().add(spicyLabel);
+        }
+        if (product.isVegetarian()) {
+            Label vegLabel = new Label("🥬 Végétarien");
+            vegLabel.setStyle("-fx-text-fill: #16a34a; -fx-font-size: 14px;");
+            indicators.getChildren().add(vegLabel);
+        }
+
+        // Ligne inférieure avec prix et bouton
         HBox bottomRow = new HBox(20);
         bottomRow.setAlignment(Pos.CENTER_LEFT);
 
-        Label price = new Label(String.format("%.2f €", p.getPrice()));
+        Label price = new Label(String.format("%.2f €", product.getPrice()));
         price.getStyleClass().add("price-text");
 
-        Region r = new Region(); HBox.setHgrow(r, Priority.ALWAYS);
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
 
         Button btnAdd = new Button(bundle.getString("menu.add"));
         btnAdd.getStyleClass().add("btn-add-product");
-        btnAdd.setOnAction(e -> showDetailScreen(p));
+        btnAdd.setOnAction(e -> showDetailScreen(product));
 
-        bottomRow.getChildren().addAll(price, r, btnAdd);
-        info.getChildren().addAll(name, desc, bottomRow);
+        bottomRow.getChildren().addAll(price, spacer, btnAdd);
+
+        // Assemblage des éléments
+        if (indicators.getChildren().isEmpty()) {
+            info.getChildren().addAll(name, desc, bottomRow);
+        } else {
+            info.getChildren().addAll(name, desc, indicators, bottomRow);
+        }
 
         card.getChildren().addAll(imgPlace, info);
         return card;
     }
 
-    // --- 3. DÉTAIL ---
-    private void showDetailScreen(Product p) {
+    // --- 3. ÉCRAN DE DÉTAIL DU PRODUIT ---
+    private void showDetailScreen(Product product) {
         BorderPane detailLayout = new BorderPane();
         detailLayout.setPadding(new Insets(20));
 
+        // Bouton retour
         HBox top = new HBox();
         Button backBtn = new Button(bundle.getString("detail.back"));
         backBtn.getStyleClass().add("btn-secondary");
@@ -220,53 +273,87 @@ public class MainController {
         top.getChildren().add(backBtn);
         detailLayout.setTop(top);
 
+        // Contenu central
         HBox center = new HBox(60);
         center.setAlignment(Pos.CENTER);
         center.setPadding(new Insets(40));
 
+        // Image du produit
         Rectangle bigImg = new Rectangle(500, 400, Color.web("#f1f5f9"));
-        bigImg.setArcWidth(30); bigImg.setArcHeight(30);
+        bigImg.setArcWidth(30);
+        bigImg.setArcHeight(30);
 
+        // Informations du produit
         VBox infoCol = new VBox(25);
         infoCol.setPrefWidth(500);
 
-        Label name = new Label(p.getName());
+        Label name = new Label(product.getName());
         name.getStyleClass().add("title-large");
         name.setStyle("-fx-font-size: 48px;");
 
-        Label desc = new Label(p.getDescription());
+        Label desc = new Label(product.getDescription());
         desc.setStyle("-fx-font-size: 22px; -fx-text-fill: #64748b;");
         desc.setWrapText(true);
 
-        Label price = new Label(String.format("%.2f €", p.getPrice()));
+        // Indicateurs
+        HBox productIndicators = new HBox(20);
+        if (product.isSpicy()) {
+            Label spicyLabel = new Label("🌶️ Ce plat est épicé");
+            spicyLabel.setStyle("-fx-text-fill: #dc2626; -fx-font-size: 18px;");
+            productIndicators.getChildren().add(spicyLabel);
+        }
+        if (product.isVegetarian()) {
+            Label vegLabel = new Label("🥬 Plat végétarien");
+            vegLabel.setStyle("-fx-text-fill: #16a34a; -fx-font-size: 18px;");
+            productIndicators.getChildren().add(vegLabel);
+        }
+
+        Label price = new Label(String.format("%.2f €", product.getPrice()));
         price.getStyleClass().add("price-text");
         price.setStyle("-fx-font-size: 32px;");
 
+        // Options personnalisables
         VBox optionsBox = new VBox(20);
-        optionsBox.setStyle("-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 10; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 5,0,0,0);");
+        optionsBox.setStyle("-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 10; " +
+                "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 5,0,0,0);");
 
         Label lblOpt1 = new Label(bundle.getString("detail.spice"));
         lblOpt1.setStyle("-fx-font-weight: bold; -fx-font-size: 18px;");
+
         ToggleGroup groupSpice = new ToggleGroup();
-        RadioButton rb1 = new RadioButton(bundle.getString("detail.spice.mild")); rb1.setToggleGroup(groupSpice); rb1.setSelected(true);
-        RadioButton rb2 = new RadioButton(bundle.getString("detail.spice.medium")); rb2.setToggleGroup(groupSpice);
-        RadioButton rb3 = new RadioButton(bundle.getString("detail.spice.hot")); rb3.setToggleGroup(groupSpice);
+        RadioButton rb1 = new RadioButton(bundle.getString("detail.spice.mild"));
+        rb1.setToggleGroup(groupSpice);
+        rb1.setSelected(true);
+
+        RadioButton rb2 = new RadioButton(bundle.getString("detail.spice.medium"));
+        rb2.setToggleGroup(groupSpice);
+
+        RadioButton rb3 = new RadioButton(bundle.getString("detail.spice.hot"));
+        rb3.setToggleGroup(groupSpice);
+
         HBox boxSpice = new HBox(20, rb1, rb2, rb3);
 
         Label lblOpt2 = new Label(bundle.getString("detail.side"));
         lblOpt2.setStyle("-fx-font-weight: bold; -fx-font-size: 18px;");
+
         ToggleGroup groupSide = new ToggleGroup();
-        RadioButton rbRice = new RadioButton(bundle.getString("detail.side.rice")); rbRice.setToggleGroup(groupSide); rbRice.setSelected(true);
-        RadioButton rbNoodle = new RadioButton(bundle.getString("detail.side.noodle")); rbNoodle.setToggleGroup(groupSide);
+        RadioButton rbRice = new RadioButton(bundle.getString("detail.side.rice"));
+        rbRice.setToggleGroup(groupSide);
+        rbRice.setSelected(true);
+
+        RadioButton rbNoodle = new RadioButton(bundle.getString("detail.side.noodle"));
+        rbNoodle.setToggleGroup(groupSide);
+
         HBox boxSide = new HBox(20, rbRice, rbNoodle);
 
         optionsBox.getChildren().addAll(lblOpt1, boxSpice, new Separator(), lblOpt2, boxSide);
 
+        // Actions : quantité et ajout au panier
         HBox actions = new HBox(20);
         actions.setAlignment(Pos.CENTER_LEFT);
 
         Spinner<Integer> spinner = new Spinner<>(1, 10, 1);
-        spinner.setStyle("-fx-font-size: 20px; -fx-body-color: white;");
+        spinner.setStyle("-fx-font-size: 20px;");
         spinner.setPrefHeight(50);
         spinner.setPrefWidth(100);
 
@@ -275,28 +362,36 @@ public class MainController {
         btnAddCart.setStyle("-fx-font-size: 22px; -fx-padding: 10 40;");
 
         btnAddCart.setOnAction(e -> {
-            List<String> opts = new ArrayList<>();
-            opts.add(((RadioButton)groupSpice.getSelectedToggle()).getText());
-            opts.add(((RadioButton)groupSide.getSelectedToggle()).getText());
-            cartService.addProduct(p, spinner.getValue(), opts);
+            List<String> options = new ArrayList<>();
+            options.add(((RadioButton) groupSpice.getSelectedToggle()).getText());
+            options.add(((RadioButton) groupSide.getSelectedToggle()).getText());
+
+            cartService.addProduct(product, spinner.getValue(), options);
             showMenuScreen();
         });
 
         actions.getChildren().addAll(spinner, btnAddCart);
 
-        infoCol.getChildren().addAll(name, desc, price, optionsBox, actions);
+        // Assemblage des éléments
+        infoCol.getChildren().addAll(name, desc);
+        if (!productIndicators.getChildren().isEmpty()) {
+            infoCol.getChildren().add(productIndicators);
+        }
+        infoCol.getChildren().addAll(price, optionsBox, actions);
+
         center.getChildren().addAll(bigImg, infoCol);
         detailLayout.setCenter(center);
 
         mainLayout.setCenter(detailLayout);
     }
 
-    // --- 4. PANIER ---
+    // --- 4. ÉCRAN DU PANIER ---
     private void showCartScreen() {
         VBox root = new VBox(20);
         root.setPadding(new Insets(50, 200, 50, 200));
         root.setAlignment(Pos.TOP_CENTER);
 
+        // Reçu de commande
         VBox receipt = new VBox(20);
         receipt.getStyleClass().add("receipt-box");
 
@@ -304,56 +399,77 @@ public class MainController {
         title.getStyleClass().add("h1");
         title.setAlignment(Pos.CENTER);
 
+        // Grille des articles
         GridPane grid = new GridPane();
-        grid.setHgap(20); grid.setVgap(15);
+        grid.setHgap(20);
+        grid.setVgap(15);
+
+        // En-têtes
         grid.add(new Label(bundle.getString("cart.article")), 0, 0);
         grid.add(new Label(bundle.getString("cart.qty")), 1, 0);
         grid.add(new Label(bundle.getString("cart.total")), 2, 0);
-        grid.getChildren().forEach(n -> n.setStyle("-fx-font-weight:bold; -fx-text-fill: #94a3b8;"));
 
+        grid.getChildren().forEach(node ->
+                node.setStyle("-fx-font-weight: bold; -fx-text-fill: #94a3b8;"));
+
+        // Articles du panier
         int row = 1;
         for (CartItem item : cartService.getItems()) {
             VBox itemDesc = new VBox(2);
+
             Label name = new Label(item.getProduct().getName());
             name.setStyle("-fx-font-weight: bold; -fx-font-size: 18px;");
-            Label opts = new Label(String.join(", ", item.getOptions()));
-            opts.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 14px;");
-            itemDesc.getChildren().addAll(name, opts);
 
-            Label qty = new Label("x" + item.getQuantity());
-            qty.setStyle("-fx-font-size: 18px;");
+            Label options = new Label(String.join(", ", item.getOptions()));
+            options.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 14px;");
+
+            itemDesc.getChildren().addAll(name, options);
+
+            Label quantity = new Label("x" + item.getQuantity());
+            quantity.setStyle("-fx-font-size: 18px;");
 
             Label price = new Label(String.format("%.2f €", item.getTotalPrice()));
             price.setStyle("-fx-font-weight: bold; -fx-font-size: 18px;");
 
             grid.add(itemDesc, 0, row);
-            grid.add(qty, 1, row);
+            grid.add(quantity, 1, row);
             grid.add(price, 2, row);
             row++;
         }
 
-        Separator sep = new Separator();
+        Separator separator = new Separator();
 
+        // Total
         HBox totalBox = new HBox(20);
         totalBox.setAlignment(Pos.CENTER_RIGHT);
+
         Label lblTotal = new Label(bundle.getString("cart.total_pay"));
+        lblTotal.setStyle("-fx-font-size: 20px;");
+
         Label valTotal = new Label(String.format("%.2f €", cartService.getTotal()));
         valTotal.getStyleClass().add("title-large");
         valTotal.setStyle("-fx-font-size: 40px; -fx-text-fill: #d97706;");
+
         totalBox.getChildren().addAll(lblTotal, valTotal);
 
+        // Informations client
         VBox clientBox = new VBox(10);
         Label lblClient = new Label(bundle.getString("cart.client_placeholder"));
-        lblClient.setStyle("-fx-text-fill: #64748b;");
+        lblClient.setStyle("-fx-text-fill: #64748b; -fx-font-size: 16px;");
+
         TextField txtClient = new TextField();
+        txtClient.setPromptText("Votre nom...");
         txtClient.setStyle("-fx-font-size: 18px; -fx-padding: 10; -fx-background-radius: 8;");
+
         clientBox.getChildren().addAll(lblClient, txtClient);
 
-        receipt.getChildren().addAll(title, new Separator(), grid, sep, totalBox, clientBox);
+        // Assemblage du reçu
+        receipt.getChildren().addAll(title, new Separator(), grid, separator, totalBox, clientBox);
 
+        // Boutons d'action
         HBox actions = new HBox(40);
         actions.setAlignment(Pos.CENTER);
-        actions.setPadding(new Insets(30,0,0,0));
+        actions.setPadding(new Insets(30, 0, 0, 0));
 
         Button btnBack = new Button(bundle.getString("cart.modify"));
         btnBack.getStyleClass().add("btn-secondary");
@@ -361,10 +477,19 @@ public class MainController {
 
         Button btnPay = new Button(bundle.getString("cart.validate"));
         btnPay.getStyleClass().add("btn-start");
-        btnPay.setOnAction(e -> showConfirmationScreen(1234));
+        btnPay.setOnAction(e -> {
+            String clientName = txtClient.getText().trim();
+            if (clientName.isEmpty()) {
+                showAlert("Veuillez saisir votre nom.");
+                return;
+            }
+            // Ici, vous appelleriez l'API pour créer la commande
+            // int orderId = apiService.createOrder(cartService.getItems(), clientName);
+            // showConfirmationScreen(orderId);
+            showConfirmationScreen(1234); // Temporaire
+        });
 
         actions.getChildren().addAll(btnBack, btnPay);
-
         root.getChildren().addAll(receipt, actions);
 
         ScrollPane scroll = new ScrollPane(root);
@@ -373,7 +498,7 @@ public class MainController {
         mainLayout.setCenter(scroll);
     }
 
-    // --- 5. CONFIRMATION ---
+    // --- 5. ÉCRAN DE CONFIRMATION ---
     private void showConfirmationScreen(int orderId) {
         VBox root = new VBox(30);
         root.setAlignment(Pos.CENTER);
@@ -384,14 +509,14 @@ public class MainController {
         Label title = new Label(bundle.getString("confirm.title"));
         title.getStyleClass().add("title-large");
 
-        Label msg = new Label(bundle.getString("confirm.msg"));
-        msg.getStyleClass().add("subtitle");
+        Label message = new Label(bundle.getString("confirm.msg"));
+        message.getStyleClass().add("subtitle");
 
-        Label numCmd = new Label("#" + orderId);
-        numCmd.setStyle("-fx-font-size: 80px; -fx-font-weight: bold; -fx-text-fill: #d97706;");
+        Label orderNumber = new Label("#" + orderId);
+        orderNumber.setStyle("-fx-font-size: 80px; -fx-font-weight: bold; -fx-text-fill: #d97706;");
 
-        Label waitMsg = new Label(bundle.getString("confirm.wait"));
-        waitMsg.setStyle("-fx-text-fill: #64748b; -fx-font-size: 20px;");
+        Label waitMessage = new Label(bundle.getString("confirm.wait"));
+        waitMessage.setStyle("-fx-text-fill: #64748b; -fx-font-size: 20px;");
 
         Button btnNew = new Button(bundle.getString("confirm.new"));
         btnNew.getStyleClass().add("btn-secondary");
@@ -400,31 +525,45 @@ public class MainController {
             showHomeScreen();
         });
 
-        root.getChildren().addAll(icon, title, msg, numCmd, waitMsg, btnNew);
+        root.getChildren().addAll(icon, title, message, orderNumber, waitMessage, btnNew);
         mainLayout.setCenter(root);
     }
 
-    // --- MOCKS (DONNÉES TRADUITES) ---
-    // C'est ici que la magie opère ! On utilise 'bundle.getString'
+    // --- MÉTHODES UTILITAIRES ---
 
-    private void mockCategories(List<Category> list) {
-        list.add(new Category(1L, bundle.getString("cat.1")));
-        list.add(new Category(2L, bundle.getString("cat.2")));
-        list.add(new Category(3L, bundle.getString("cat.3")));
-        list.add(new Category(4L, bundle.getString("cat.4")));
+    private void showErrorScreen(String errorMessage) {
+        VBox errorBox = new VBox(30);
+        errorBox.setAlignment(Pos.CENTER);
+        errorBox.setPadding(new Insets(50));
+
+        Label errorIcon = new Label("⚠️");
+        errorIcon.setStyle("-fx-font-size: 60px;");
+
+        Label errorLabel = new Label("Erreur de connexion");
+        errorLabel.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #dc2626;");
+
+        Label errorDetail = new Label(errorMessage);
+        errorDetail.setStyle("-fx-text-fill: #64748b; -fx-font-size: 16px;");
+        errorDetail.setWrapText(true);
+        errorDetail.setMaxWidth(400);
+
+        Button retryBtn = new Button("Réessayer");
+        retryBtn.getStyleClass().add("btn-primary");
+        retryBtn.setOnAction(e -> showMenuScreen());
+
+        Button backBtn = new Button("Retour à l'accueil");
+        backBtn.getStyleClass().add("btn-secondary");
+        backBtn.setOnAction(e -> showHomeScreen());
+
+        errorBox.getChildren().addAll(errorIcon, errorLabel, errorDetail, retryBtn, backBtn);
+        mainLayout.setCenter(errorBox);
     }
 
-    private void mockProducts(List<Product> list, Long catId) {
-        if (catId == 1L) {
-            list.add(new Product(10L, bundle.getString("prod.10.name"), 6.90, bundle.getString("prod.10.desc"), catId));
-            list.add(new Product(11L, bundle.getString("prod.11.name"), 5.50, bundle.getString("prod.11.desc"), catId));
-        } else if (catId == 2L) {
-            list.add(new Product(20L, bundle.getString("prod.20.name"), 12.90, bundle.getString("prod.20.desc"), catId));
-            list.add(new Product(21L, bundle.getString("prod.21.name"), 14.50, bundle.getString("prod.21.desc"), catId));
-            list.add(new Product(22L, bundle.getString("prod.22.name"), 14.90, bundle.getString("prod.22.desc"), catId));
-        } else {
-            list.add(new Product(30L, bundle.getString("prod.30.name"), 4.50, bundle.getString("prod.30.desc"), catId));
-            list.add(new Product(31L, bundle.getString("prod.31.name"), 5.00, bundle.getString("prod.31.desc"), catId));
-        }
+    private void showAlert(String message) {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle("Information");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 }

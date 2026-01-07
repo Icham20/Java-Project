@@ -3,9 +3,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CartItem {
-    private Product product;
-    private int quantity;
-    private List<String> options;
+    private final Product product;
+    private final int quantity;
+    private final List<String> options;
 
     public CartItem(Product product, int quantity) {
         this.product = product;

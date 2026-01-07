@@ -1,4 +1,4 @@
-package org.example.service;
+package org.example.services;
 import org.example.model.CartItem;
 import org.example.model.Product;
 import java.util.ArrayList;
