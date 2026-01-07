@@ -3,7 +3,10 @@ package org.example.controller;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -12,7 +15,6 @@ import org.example.services.CartService;
 import org.example.model.Category;
 import org.example.model.Product;
 import org.example.services.ApiService;
-
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +45,6 @@ public class MainController {
         try {
             this.bundle = ResourceBundle.getBundle("org.example.strings", currentLocale, new UTF8Control());
         } catch (Exception e) {
-            // Fallback standard si erreur
             this.bundle = ResourceBundle.getBundle("org.example.strings", currentLocale);
         }
         showHomeScreen();
@@ -128,7 +129,6 @@ public class MainController {
         tabs.setAlignment(Pos.CENTER);
         HBox.setHgrow(tabs, Priority.ALWAYS);
 
-        // Récupérer les catégories depuis l'API
         List<Category> categories = apiService.getCategories();
 
         if (categories.isEmpty()) {
@@ -136,12 +136,10 @@ public class MainController {
             return;
         }
 
-        // Sélectionner la première catégorie par défaut
         if (currentCategory == null) {
             currentCategory = categories.get(0);
         }
 
-        // Créer les onglets des catégories
         for (Category cat : categories) {
             Button tab = new Button(cat.getName());
             tab.getStyleClass().add("tab-button");
@@ -157,7 +155,6 @@ public class MainController {
             tabs.getChildren().add(tab);
         }
 
-        // Bouton panier dans l'en-tête
         Button btnCartTop = new Button("🛒 " + String.format("%.2f €", cartService.getTotal()));
         btnCartTop.getStyleClass().add("btn-primary");
         btnCartTop.setOnAction(e -> showCartScreen());
@@ -225,10 +222,34 @@ public class MainController {
         card.setPrefWidth(550);
         card.setAlignment(Pos.CENTER_LEFT);
 
-        // Placeholder pour l'image (pourrait être remplacé par une vraie image)
-        Rectangle imgPlace = new Rectangle(140, 140, Color.web("#f1f5f9"));
-        imgPlace.setArcWidth(20);
-        imgPlace.setArcHeight(20);
+        // --- GESTION IMAGE ---
+        Node imageNode;
+        String imagePath = "/org/example/images/" + product.getImageUrl();
+
+        // On vérifie si l'image existe dans les ressources
+        if (product.getImageUrl() != null && !product.getImageUrl().isEmpty() &&
+                getClass().getResource(imagePath) != null) {
+
+            // Si oui, on charge l'image
+            ImageView imageView = new ImageView(new Image(getClass().getResourceAsStream(imagePath)));
+            imageView.setFitWidth(140);
+            imageView.setFitHeight(140);
+            imageView.setPreserveRatio(true);
+
+            // On arrondit les coins de l'image
+            Rectangle clip = new Rectangle(140, 140);
+            clip.setArcWidth(20);
+            clip.setArcHeight(20);
+            imageView.setClip(clip);
+
+            imageNode = imageView;
+        } else {
+            // Sinon, on garde le rectangle gris habituel
+            Rectangle imgPlace = new Rectangle(140, 140, Color.web("#f1f5f9"));
+            imgPlace.setArcWidth(20);
+            imgPlace.setArcHeight(20);
+            imageNode = imgPlace;
+        }
 
         // Informations du produit
         VBox info = new VBox(10);
@@ -243,7 +264,6 @@ public class MainController {
         desc.setWrapText(true);
         desc.setStyle("-fx-text-fill: #64748b;");
 
-        // Indicateurs épicé/végétarien (optionnels)
         HBox indicators = new HBox(10);
         if (product.isSpicy()) {
             Label spicyLabel = new Label("🌶️ Épicé");
@@ -256,7 +276,6 @@ public class MainController {
             indicators.getChildren().add(vegLabel);
         }
 
-        // Ligne inférieure avec prix et bouton
         HBox bottomRow = new HBox(20);
         bottomRow.setAlignment(Pos.CENTER_LEFT);
 
@@ -268,14 +287,11 @@ public class MainController {
 
         Button btnAdd = new Button(bundle.getString("menu.add"));
         btnAdd.getStyleClass().add("btn-add-product");
-        
+
         if (!product.isAvailable()) {
             btnAdd.setText("INDISPONIBLE");
             btnAdd.setDisable(true);
-            // Bouton en rouge comme demandé
             btnAdd.setStyle("-fx-background-color: #fee2e2; -fx-text-fill: #dc2626; -fx-border-color: #dc2626; -fx-font-weight: bold; -fx-opacity: 1;");
-            
-            // On grise uniquement les textes du produit (nom et description)
             name.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 24px;");
             desc.setStyle("-fx-text-fill: #cbd5e1;");
         } else {
@@ -284,14 +300,14 @@ public class MainController {
 
         bottomRow.getChildren().addAll(price, spacer, btnAdd);
 
-        // Assemblage des éléments
         if (indicators.getChildren().isEmpty()) {
             info.getChildren().addAll(name, desc, bottomRow);
         } else {
             info.getChildren().addAll(name, desc, indicators, bottomRow);
         }
 
-        card.getChildren().addAll(imgPlace, info);
+        // On ajoute l'image (ou le rectangle) à la carte
+        card.getChildren().addAll(imageNode, info);
         return card;
     }
 
@@ -300,7 +316,6 @@ public class MainController {
         BorderPane detailLayout = new BorderPane();
         detailLayout.setPadding(new Insets(20));
 
-        // Bouton retour
         HBox top = new HBox();
         Button backBtn = new Button(bundle.getString("detail.back"));
         backBtn.getStyleClass().add("btn-secondary");
@@ -308,17 +323,35 @@ public class MainController {
         top.getChildren().add(backBtn);
         detailLayout.setTop(top);
 
-        // Contenu central
         HBox center = new HBox(60);
         center.setAlignment(Pos.CENTER);
         center.setPadding(new Insets(40));
 
-        // Image du produit
-        Rectangle bigImg = new Rectangle(500, 400, Color.web("#f1f5f9"));
-        bigImg.setArcWidth(30);
-        bigImg.setArcHeight(30);
+        // --- GESTION GRANDE IMAGE ---
+        Node imageNode;
+        String imagePath = "/org/example/images/" + product.getImageUrl();
 
-        // Informations du produit
+        if (product.getImageUrl() != null && !product.getImageUrl().isEmpty() &&
+                getClass().getResource(imagePath) != null) {
+
+            ImageView imageView = new ImageView(new Image(getClass().getResourceAsStream(imagePath)));
+            imageView.setFitWidth(500);
+            imageView.setFitHeight(400);
+            imageView.setPreserveRatio(true);
+
+            Rectangle clip = new Rectangle(500, 400);
+            clip.setArcWidth(30);
+            clip.setArcHeight(30);
+            imageView.setClip(clip);
+
+            imageNode = imageView;
+        } else {
+            Rectangle bigImg = new Rectangle(500, 400, Color.web("#f1f5f9"));
+            bigImg.setArcWidth(30);
+            bigImg.setArcHeight(30);
+            imageNode = bigImg;
+        }
+
         VBox infoCol = new VBox(25);
         infoCol.setPrefWidth(500);
 
@@ -330,7 +363,6 @@ public class MainController {
         desc.setStyle("-fx-font-size: 22px; -fx-text-fill: #64748b;");
         desc.setWrapText(true);
 
-        // Indicateurs
         HBox productIndicators = new HBox(20);
         if (product.isSpicy()) {
             Label spicyLabel = new Label("🌶️ Ce plat est épicé");
@@ -347,17 +379,14 @@ public class MainController {
         price.getStyleClass().add("price-text");
         price.setStyle("-fx-font-size: 32px;");
 
-        // Options personnalisables (Dynamique selon la catégorie)
         VBox optionsBox = new VBox(20);
         optionsBox.setStyle("-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 10; " +
                 "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 5,0,0,0);");
 
-        // Interface fonctionnelle pour récupérer les options choisies au moment du clic
         java.util.function.Supplier<List<String>> optionsSupplier;
-
         long catId = product.getCategoryId();
 
-        if (catId == 2) { // === PLATS (Spice + Side) ===
+        if (catId == 2) { // PLATS
             Label lblOpt1 = new Label(bundle.getString("detail.spice"));
             lblOpt1.setStyle("-fx-font-weight: bold; -fx-font-size: 18px;");
 
@@ -393,17 +422,16 @@ public class MainController {
                 return opts;
             };
 
-        } else if (catId == 3) { // === DESSERTS (Café) ===
+        } else if (catId == 3) { // DESSERTS
             Label lblCoffee = new Label(bundle.getString("detail.coffee"));
             lblCoffee.setStyle("-fx-font-weight: bold; -fx-font-size: 18px;");
 
             ToggleGroup groupCoffee = new ToggleGroup();
             RadioButton rbYes = new RadioButton(bundle.getString("detail.yes"));
             rbYes.setToggleGroup(groupCoffee);
-            
             RadioButton rbNo = new RadioButton(bundle.getString("detail.no"));
             rbNo.setToggleGroup(groupCoffee);
-            rbNo.setSelected(true); // Non par défaut
+            rbNo.setSelected(true);
 
             HBox boxCoffee = new HBox(20, rbYes, rbNo);
             optionsBox.getChildren().addAll(lblCoffee, boxCoffee);
@@ -416,14 +444,14 @@ public class MainController {
                 return opts;
             };
 
-        } else if (catId == 4) { // === BOISSONS (Glaçons) ===
+        } else if (catId == 4) { // BOISSONS
             Label lblIce = new Label(bundle.getString("detail.ice"));
             lblIce.setStyle("-fx-font-weight: bold; -fx-font-size: 18px;");
 
             ToggleGroup groupIce = new ToggleGroup();
             RadioButton rbIceYes = new RadioButton(bundle.getString("detail.yes"));
             rbIceYes.setToggleGroup(groupIce);
-            rbIceYes.setSelected(true); // Oui par défaut
+            rbIceYes.setSelected(true);
 
             RadioButton rbIceNo = new RadioButton(bundle.getString("detail.no"));
             rbIceNo.setToggleGroup(groupIce);
@@ -441,14 +469,12 @@ public class MainController {
                 return opts;
             };
 
-        } else { // === ENTRÉES (Rien) ===
-            // Pas d'options pour les entrées
+        } else { // ENTRÉES
             optionsSupplier = ArrayList::new;
-            optionsBox.setVisible(false); // Cache la boîte vide
-            optionsBox.setManaged(false); // Libère l'espace
+            optionsBox.setVisible(false);
+            optionsBox.setManaged(false);
         }
 
-        // Actions : quantité et ajout au panier
         HBox actions = new HBox(20);
         actions.setAlignment(Pos.CENTER_LEFT);
 
@@ -462,23 +488,21 @@ public class MainController {
         btnAddCart.setStyle("-fx-font-size: 22px; -fx-padding: 10 40;");
 
         btnAddCart.setOnAction(e -> {
-            // Récupération dynamique des options
             List<String> options = optionsSupplier.get();
-
             cartService.addProduct(product, spinner.getValue(), options);
             showMenuScreen();
         });
 
         actions.getChildren().addAll(spinner, btnAddCart);
 
-        // Assemblage des éléments
         infoCol.getChildren().addAll(name, desc);
         if (!productIndicators.getChildren().isEmpty()) {
             infoCol.getChildren().add(productIndicators);
         }
         infoCol.getChildren().addAll(price, optionsBox, actions);
 
-        center.getChildren().addAll(bigImg, infoCol);
+        // Ajout de l'image (ou rectangle) au centre
+        center.getChildren().addAll(imageNode, infoCol);
         detailLayout.setCenter(center);
 
         mainLayout.setCenter(detailLayout);
@@ -487,10 +511,9 @@ public class MainController {
     // --- 4. ÉCRAN DU PANIER ---
     private void showCartScreen() {
         VBox root = new VBox(20);
-        root.setPadding(new Insets(20, 40, 20, 40));  // Padding réduit
+        root.setPadding(new Insets(20, 40, 20, 40));
         root.setAlignment(Pos.TOP_CENTER);
 
-        // Header
         HBox header = new HBox(10);
         header.setAlignment(Pos.CENTER_LEFT);
 
@@ -503,7 +526,6 @@ public class MainController {
         header.getChildren().addAll(title, itemCount);
 
         if (cartService.getItems().isEmpty()) {
-            // Panier vide
             VBox emptyCart = new VBox(30);
             emptyCart.setAlignment(Pos.CENTER);
             emptyCart.setPadding(new Insets(100, 0, 0, 0));
@@ -523,7 +545,6 @@ public class MainController {
             root.getChildren().addAll(header, emptyCart);
 
         } else {
-            // Liste des articles avec possibilité de modifier
             VBox itemsList = new VBox(15);
 
             for (int i = 0; i < cartService.getItems().size(); i++) {
@@ -531,10 +552,8 @@ public class MainController {
                 itemsList.getChildren().add(createCartItemRow(item, i));
             }
 
-            // Séparateur
             Separator separator = new Separator();
 
-            // Total
             HBox totalBox = new HBox(20);
             totalBox.setAlignment(Pos.CENTER_RIGHT);
             totalBox.setPadding(new Insets(20, 0, 0, 0));
@@ -548,7 +567,6 @@ public class MainController {
 
             totalBox.getChildren().addAll(totalLabel, totalValue);
 
-            // Informations client
             VBox clientBox = new VBox(10);
             clientBox.setPadding(new Insets(20, 0, 0, 0));
 
@@ -562,7 +580,6 @@ public class MainController {
 
             clientBox.getChildren().addAll(clientLabel, txtClient);
 
-            // Boutons
             HBox buttons = new HBox(30);
             buttons.setAlignment(Pos.CENTER);
             buttons.setPadding(new Insets(40, 0, 0, 0));
@@ -584,7 +601,7 @@ public class MainController {
                     return;
                 }
 
-                // Construction de la commande pour l'API
+                // Construction de la commande
                 List<org.example.model.OrderItem> orderItems = new ArrayList<>();
                 for (CartItem ci : cartService.getItems()) {
                     orderItems.add(new org.example.model.OrderItem(
@@ -601,7 +618,6 @@ public class MainController {
                         orderItems
                 );
 
-                // Envoi à l'API
                 int orderId = apiService.createOrder(newOrder);
 
                 if (orderId > 0) {
@@ -613,8 +629,6 @@ public class MainController {
             });
 
             buttons.getChildren().addAll(continueBtn, validateBtn);
-
-            // Assemblage
             root.getChildren().addAll(header, itemsList, separator, totalBox, clientBox, buttons);
         }
 
@@ -632,7 +646,7 @@ public class MainController {
         row.setStyle("-fx-background-color: white; -fx-background-radius: 10; " +
                 "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 5,0,0,0);");
 
-        // Image placeholder
+        // Image placeholder (ou image réelle si tu veux l'ajouter ici aussi)
         Rectangle imgPlace = new Rectangle(80, 80, Color.web("#f1f5f9"));
         imgPlace.setArcWidth(15);
         imgPlace.setArcHeight(15);
@@ -644,7 +658,6 @@ public class MainController {
         Label name = new Label(item.getProduct().getName());
         name.setStyle("-fx-font-weight: bold; -fx-font-size: 18px;");
 
-        // Affiche "Aucune option" si la liste est vide
         String optionsText = item.getOptions().isEmpty() ?
                 "Aucune option" : "Options: " + String.join(", ", item.getOptions());
         Label options = new Label(optionsText);
@@ -662,9 +675,8 @@ public class MainController {
         minusBtn.setOnAction(e -> {
             if (item.getQuantity() > 1) {
                 item.setQuantity(item.getQuantity() - 1);
-                showCartScreen(); // Rafraîchit l'écran
+                showCartScreen();
             } else {
-                // Supprime si quantité devient 0
                 cartService.removeItem(index);
                 showCartScreen();
             }
@@ -678,7 +690,7 @@ public class MainController {
                 "-fx-background-radius: 17; -fx-font-weight: bold; -fx-font-size: 16px;");
         plusBtn.setOnAction(e -> {
             item.setQuantity(item.getQuantity() + 1);
-            showCartScreen(); // Rafraîchit l'écran
+            showCartScreen();
         });
 
         quantityBox.getChildren().addAll(minusBtn, quantityLabel, plusBtn);
@@ -694,12 +706,13 @@ public class MainController {
                 "-fx-font-size: 18px;");
         deleteBtn.setOnAction(e -> {
             cartService.removeItem(index);
-            showCartScreen(); // Rafraîchit l'écran
+            showCartScreen();
         });
 
         row.getChildren().addAll(imgPlace, productInfo, quantityBox, price, deleteBtn);
         return row;
     }
+
     // --- 5. ÉCRAN DE CONFIRMATION ---
     private void showConfirmationScreen(int orderId) {
         VBox root = new VBox(30);
