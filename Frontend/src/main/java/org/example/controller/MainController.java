@@ -268,7 +268,19 @@ public class MainController {
 
         Button btnAdd = new Button(bundle.getString("menu.add"));
         btnAdd.getStyleClass().add("btn-add-product");
-        btnAdd.setOnAction(e -> showDetailScreen(product));
+        
+        if (!product.isAvailable()) {
+            btnAdd.setText("INDISPONIBLE");
+            btnAdd.setDisable(true);
+            // Bouton en rouge comme demandé
+            btnAdd.setStyle("-fx-background-color: #fee2e2; -fx-text-fill: #dc2626; -fx-border-color: #dc2626; -fx-font-weight: bold; -fx-opacity: 1;");
+            
+            // On grise uniquement les textes du produit (nom et description)
+            name.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 24px;");
+            desc.setStyle("-fx-text-fill: #cbd5e1;");
+        } else {
+            btnAdd.setOnAction(e -> showDetailScreen(product));
+        }
 
         bottomRow.getChildren().addAll(price, spacer, btnAdd);
 
@@ -572,15 +584,32 @@ public class MainController {
                     return;
                 }
 
-                // Log pour debug
-                System.out.println("🎯 Commande validée !");
-                System.out.println("👤 Client: " + clientName);
-                System.out.println("📦 Articles: " + cartService.getItems().size());
-                System.out.println("💰 Total: " + cartService.getTotal() + "€");
+                // Construction de la commande pour l'API
+                List<org.example.model.OrderItem> orderItems = new ArrayList<>();
+                for (CartItem ci : cartService.getItems()) {
+                    orderItems.add(new org.example.model.OrderItem(
+                            ci.getProduct().getId().intValue(),
+                            ci.getQuantity(),
+                            ci.getProduct().getPrice(),
+                            String.join(",", ci.getOptions())
+                    ));
+                }
 
-                // Pour l'instant, simulation
-                int orderId = (int) (Math.random() * 9000) + 1000;
-                showConfirmationScreen(orderId);
+                org.example.model.Order newOrder = new org.example.model.Order(
+                        clientName,
+                        cartService.getTotal(),
+                        orderItems
+                );
+
+                // Envoi à l'API
+                int orderId = apiService.createOrder(newOrder);
+
+                if (orderId > 0) {
+                    System.out.println("✅ Commande envoyée avec succès : ID " + orderId);
+                    showConfirmationScreen(orderId);
+                } else {
+                    showAlert("Erreur lors de l'envoi de la commande. Stock peut-être insuffisant.");
+                }
             });
 
             buttons.getChildren().addAll(continueBtn, validateBtn);

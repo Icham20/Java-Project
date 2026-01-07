@@ -18,11 +18,12 @@ public class Product {
     private boolean spicy;
     private boolean vegetarian;
     private boolean available;
+    private int stockQuantity;
 
     public Product() {}
 
     public Product(Long id, String name, double price, String description, Long categoryId,
-                   String imageUrl, boolean spicy, boolean vegetarian, boolean available) {
+                   String imageUrl, boolean spicy, boolean vegetarian, boolean available, int stockQuantity) {
         this.id = id;
         this.name = name;
         this.price = price;
@@ -32,9 +33,13 @@ public class Product {
         this.spicy = spicy;
         this.vegetarian = vegetarian;
         this.available = available;
+        this.stockQuantity = stockQuantity;
     }
 
     // Getters & Setters pour tous les champs
+    public int getStockQuantity() { return stockQuantity; }
+    public void setStockQuantity(int stockQuantity) { this.stockQuantity = stockQuantity; }
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

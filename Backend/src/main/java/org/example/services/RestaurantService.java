@@ -45,7 +45,17 @@ public class RestaurantService {
 
     // === COMMANDES ===
     public int createOrder(Order order) {
-        return orderRepository.save(order); // Utilise save(), retourne l'ID
+        // 1. Vérifier et décrémenter le stock pour chaque article
+        for (OrderItem item : order.getItems()) {
+            boolean success = productRepository.updateStock(item.getProductId(), item.getQuantity());
+            if (!success) {
+                // En réalité, il faudrait faire un rollback transactionnel ici
+                throw new RuntimeException("Stock insuffisant pour le produit ID: " + item.getProductId());
+            }
+        }
+        
+        // 2. Si tout est bon, on sauvegarde la commande
+        return orderRepository.save(order);
     }
 
     public Order getOrderById(int id) {

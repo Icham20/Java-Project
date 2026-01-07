@@ -44,36 +44,30 @@ public class ProductDTO {
 
     /**
      * Constructeur vide OBLIGATOIRE pour Jackson.
-     * Jackson l'utilise pour créer l'objet depuis JSON.
      */
     public ProductDTO() {
-        // Ne rien mettre ici !
     }
 
     /**
      * Constructeur de conversion depuis un Product (modèle BDD).
-     * C'est ici qu'on décide QUELS champs on expose.
-     *
-     * @param product Le Product de la base de données
+     * DÉMONSTRATION DTO : On utilise le stockQuantity du modèle interne
+     * pour calculer 'available', mais on ne l'expose pas dans le JSON final.
      */
     public ProductDTO(org.example.model.Product product) {
-        // Conversion des types primitifs (int) vers objets (Long)
         this.id = (long) product.getId();
         this.categoryId = (long) product.getCategoryId();
-
-        // Copie simple des autres champs
         this.name = product.getName();
         this.description = product.getDescription();
         this.price = product.getPrice();
         this.imageUrl = product.getImageUrl();
         this.spicy = product.isSpicy();
         this.vegetarian = product.isVegetarian();
-        this.available = product.isAvailable();
+        
+        // Logique interne : stock <= 0 signifie que le produit devient indisponible
+        this.available = product.isAvailable() && (product.getStockQuantity() > 0);
     }
 
     // ==================== GETTERS & SETTERS ====================
-    // OBLIGATOIRES pour chaque champ ! Jackson les utilise.
-
     public Long getId() {
         return id;
     }

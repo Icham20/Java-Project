@@ -75,6 +75,30 @@ public class ProductRepository {
     }
 
     /**
+     * Met à jour le stock d'un produit.
+     * @param productId ID du produit
+     * @param quantityToRemove Quantité à retirer
+     * @return true si succès
+     */
+    public boolean updateStock(int productId, int quantityToRemove) {
+        String sql = "UPDATE product SET stock_quantity = stock_quantity - ? WHERE id = ? AND stock_quantity >= ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setInt(1, quantityToRemove);
+            stmt.setInt(2, productId);
+            stmt.setInt(3, quantityToRemove); // Vérifie qu'il y a assez de stock
+            
+            int rowsUpdated = stmt.executeUpdate();
+            return rowsUpdated > 0;
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
      * Méthode utilitaire pour transformer une ligne SQL en objet Java Product.
      * Évite de répéter le même code dans chaque méthode.
      */
