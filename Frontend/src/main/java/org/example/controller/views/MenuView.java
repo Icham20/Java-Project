@@ -12,13 +12,13 @@ import javafx.scene.shape.Rectangle;
 import org.example.controller.MainController;
 import org.example.model.Category;
 import org.example.model.Product;
-import org.example.service.MockDatabase;
+// L'import de MockDatabase a été retiré ici
 
 import java.util.List;
 
 public class MenuView {
     private final MainController controller;
-    private static Category currentCategory; // Static pour mémoriser la catégorie entre les vues
+    private static Category currentCategory;
 
     public MenuView(MainController controller) {
         this.controller = controller;
@@ -40,8 +40,11 @@ public class MenuView {
         tabs.setAlignment(Pos.CENTER);
         HBox.setHgrow(tabs, Priority.ALWAYS);
 
+        // 1. On récupère les VRAIES catégories depuis l'API
         List<Category> categories = controller.getApiService().getCategories();
-        if(categories.isEmpty()) MockDatabase.fillCategories(categories, controller.getBundle());
+
+        // (J'ai supprimé la ligne qui appelait MockDatabase ici)
+
         if(currentCategory == null && !categories.isEmpty()) currentCategory = categories.get(0);
 
         for (Category cat : categories) {
@@ -52,7 +55,7 @@ public class MenuView {
             }
             tab.setOnAction(e -> {
                 currentCategory = cat;
-                controller.showMenuScreen(); // Recharge la vue
+                controller.showMenuScreen();
             });
             tabs.getChildren().add(tab);
         }
@@ -71,11 +74,15 @@ public class MenuView {
         grid.setAlignment(Pos.TOP_CENTER);
         grid.setPadding(new Insets(20));
 
-        List<Product> products = controller.getApiService().getProductsByCategory(currentCategory.getId());
-        if(products.isEmpty()) MockDatabase.fillProducts(products, currentCategory.getId(), controller.getBundle());
+        // 2. On récupère les VRAIS produits depuis l'API
+        if (currentCategory != null) {
+            List<Product> products = controller.getApiService().getProductsByCategory(currentCategory.getId());
 
-        for (Product p : products) {
-            grid.getChildren().add(createProductCard(p));
+            // (J'ai supprimé la ligne qui appelait MockDatabase ici aussi)
+
+            for (Product p : products) {
+                grid.getChildren().add(createProductCard(p));
+            }
         }
 
         ScrollPane scroll = new ScrollPane(grid);
@@ -112,6 +119,7 @@ public class MenuView {
         card.setPrefWidth(550);
         card.setAlignment(Pos.CENTER_LEFT);
 
+        // Essai de chargement d'image (Placeholder gris)
         Rectangle imgPlace = new Rectangle(140, 140, Color.web("#f1f5f9"));
         imgPlace.setArcWidth(20); imgPlace.setArcHeight(20);
 
