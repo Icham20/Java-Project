@@ -40,8 +40,30 @@ public class MainController {
 
     private void loadLanguage(String lang) {
         currentLocale = new Locale(lang);
-        this.bundle = ResourceBundle.getBundle("org.example.strings", currentLocale);
+        try {
+            this.bundle = ResourceBundle.getBundle("org.example.strings", currentLocale, new UTF8Control());
+        } catch (Exception e) {
+            // Fallback standard si erreur
+            this.bundle = ResourceBundle.getBundle("org.example.strings", currentLocale);
+        }
         showHomeScreen();
+    }
+
+    // Classe interne pour forcer l'UTF-8
+    public static class UTF8Control extends ResourceBundle.Control {
+        @Override
+        public ResourceBundle newBundle(String baseName, Locale locale, String format, ClassLoader loader, boolean reload)
+                throws IllegalAccessException, InstantiationException, java.io.IOException {
+            String bundleName = toBundleName(baseName, locale);
+            String resourceName = toResourceName(bundleName, "properties");
+            java.io.InputStream stream = loader.getResourceAsStream(resourceName);
+            if (stream != null) {
+                try (java.io.InputStreamReader reader = new java.io.InputStreamReader(stream, "UTF-8")) {
+                    return new java.util.PropertyResourceBundle(reader);
+                }
+            }
+            return super.newBundle(baseName, locale, format, loader, reload);
+        }
     }
 
     // --- 1. ÉCRAN D'ACCUEIL ---
@@ -313,41 +335,106 @@ public class MainController {
         price.getStyleClass().add("price-text");
         price.setStyle("-fx-font-size: 32px;");
 
-        // Options personnalisables
+        // Options personnalisables (Dynamique selon la catégorie)
         VBox optionsBox = new VBox(20);
         optionsBox.setStyle("-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 10; " +
                 "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 5,0,0,0);");
 
-        Label lblOpt1 = new Label(bundle.getString("detail.spice"));
-        lblOpt1.setStyle("-fx-font-weight: bold; -fx-font-size: 18px;");
+        // Interface fonctionnelle pour récupérer les options choisies au moment du clic
+        java.util.function.Supplier<List<String>> optionsSupplier;
 
-        ToggleGroup groupSpice = new ToggleGroup();
-        RadioButton rb1 = new RadioButton(bundle.getString("detail.spice.mild"));
-        rb1.setToggleGroup(groupSpice);
-        rb1.setSelected(true);
+        long catId = product.getCategoryId();
 
-        RadioButton rb2 = new RadioButton(bundle.getString("detail.spice.medium"));
-        rb2.setToggleGroup(groupSpice);
+        if (catId == 2) { // === PLATS (Spice + Side) ===
+            Label lblOpt1 = new Label(bundle.getString("detail.spice"));
+            lblOpt1.setStyle("-fx-font-weight: bold; -fx-font-size: 18px;");
 
-        RadioButton rb3 = new RadioButton(bundle.getString("detail.spice.hot"));
-        rb3.setToggleGroup(groupSpice);
+            ToggleGroup groupSpice = new ToggleGroup();
+            RadioButton rb1 = new RadioButton(bundle.getString("detail.spice.mild"));
+            rb1.setToggleGroup(groupSpice);
+            rb1.setSelected(true);
+            RadioButton rb2 = new RadioButton(bundle.getString("detail.spice.medium"));
+            rb2.setToggleGroup(groupSpice);
+            RadioButton rb3 = new RadioButton(bundle.getString("detail.spice.hot"));
+            rb3.setToggleGroup(groupSpice);
 
-        HBox boxSpice = new HBox(20, rb1, rb2, rb3);
+            HBox boxSpice = new HBox(20, rb1, rb2, rb3);
 
-        Label lblOpt2 = new Label(bundle.getString("detail.side"));
-        lblOpt2.setStyle("-fx-font-weight: bold; -fx-font-size: 18px;");
+            Label lblOpt2 = new Label(bundle.getString("detail.side"));
+            lblOpt2.setStyle("-fx-font-weight: bold; -fx-font-size: 18px;");
 
-        ToggleGroup groupSide = new ToggleGroup();
-        RadioButton rbRice = new RadioButton(bundle.getString("detail.side.rice"));
-        rbRice.setToggleGroup(groupSide);
-        rbRice.setSelected(true);
+            ToggleGroup groupSide = new ToggleGroup();
+            RadioButton rbRice = new RadioButton(bundle.getString("detail.side.rice"));
+            rbRice.setToggleGroup(groupSide);
+            rbRice.setSelected(true);
+            RadioButton rbNoodle = new RadioButton(bundle.getString("detail.side.noodle"));
+            rbNoodle.setToggleGroup(groupSide);
 
-        RadioButton rbNoodle = new RadioButton(bundle.getString("detail.side.noodle"));
-        rbNoodle.setToggleGroup(groupSide);
+            HBox boxSide = new HBox(20, rbRice, rbNoodle);
 
-        HBox boxSide = new HBox(20, rbRice, rbNoodle);
+            optionsBox.getChildren().addAll(lblOpt1, boxSpice, new Separator(), lblOpt2, boxSide);
 
-        optionsBox.getChildren().addAll(lblOpt1, boxSpice, new Separator(), lblOpt2, boxSide);
+            optionsSupplier = () -> {
+                List<String> opts = new ArrayList<>();
+                opts.add(((RadioButton) groupSpice.getSelectedToggle()).getText());
+                opts.add(((RadioButton) groupSide.getSelectedToggle()).getText());
+                return opts;
+            };
+
+        } else if (catId == 3) { // === DESSERTS (Café) ===
+            Label lblCoffee = new Label(bundle.getString("detail.coffee"));
+            lblCoffee.setStyle("-fx-font-weight: bold; -fx-font-size: 18px;");
+
+            ToggleGroup groupCoffee = new ToggleGroup();
+            RadioButton rbYes = new RadioButton(bundle.getString("detail.yes"));
+            rbYes.setToggleGroup(groupCoffee);
+            
+            RadioButton rbNo = new RadioButton(bundle.getString("detail.no"));
+            rbNo.setToggleGroup(groupCoffee);
+            rbNo.setSelected(true); // Non par défaut
+
+            HBox boxCoffee = new HBox(20, rbYes, rbNo);
+            optionsBox.getChildren().addAll(lblCoffee, boxCoffee);
+
+            optionsSupplier = () -> {
+                List<String> opts = new ArrayList<>();
+                if (rbYes.isSelected()) {
+                    opts.add("Avec Café");
+                }
+                return opts;
+            };
+
+        } else if (catId == 4) { // === BOISSONS (Glaçons) ===
+            Label lblIce = new Label(bundle.getString("detail.ice"));
+            lblIce.setStyle("-fx-font-weight: bold; -fx-font-size: 18px;");
+
+            ToggleGroup groupIce = new ToggleGroup();
+            RadioButton rbIceYes = new RadioButton(bundle.getString("detail.yes"));
+            rbIceYes.setToggleGroup(groupIce);
+            rbIceYes.setSelected(true); // Oui par défaut
+
+            RadioButton rbIceNo = new RadioButton(bundle.getString("detail.no"));
+            rbIceNo.setToggleGroup(groupIce);
+
+            HBox boxIce = new HBox(20, rbIceYes, rbIceNo);
+            optionsBox.getChildren().addAll(lblIce, boxIce);
+
+            optionsSupplier = () -> {
+                List<String> opts = new ArrayList<>();
+                if (rbIceYes.isSelected()) {
+                    opts.add("Avec Glaçons");
+                } else {
+                    opts.add("Sans Glaçons");
+                }
+                return opts;
+            };
+
+        } else { // === ENTRÉES (Rien) ===
+            // Pas d'options pour les entrées
+            optionsSupplier = ArrayList::new;
+            optionsBox.setVisible(false); // Cache la boîte vide
+            optionsBox.setManaged(false); // Libère l'espace
+        }
 
         // Actions : quantité et ajout au panier
         HBox actions = new HBox(20);
@@ -363,9 +450,8 @@ public class MainController {
         btnAddCart.setStyle("-fx-font-size: 22px; -fx-padding: 10 40;");
 
         btnAddCart.setOnAction(e -> {
-            List<String> options = new ArrayList<>();
-            options.add(((RadioButton) groupSpice.getSelectedToggle()).getText());
-            options.add(((RadioButton) groupSide.getSelectedToggle()).getText());
+            // Récupération dynamique des options
+            List<String> options = optionsSupplier.get();
 
             cartService.addProduct(product, spinner.getValue(), options);
             showMenuScreen();
