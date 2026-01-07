@@ -88,7 +88,8 @@ public class ProductRepository {
             rs.getString("image_url"),
             rs.getBoolean("is_spicy"),
             rs.getBoolean("is_vegetarian"),
-            rs.getBoolean("available")
+            rs.getBoolean("available"),
+            rs.getInt("stock_quantity") // Récupération du champ non exposé
         );
     }
 }
