@@ -25,6 +25,14 @@ public class MockDatabase {
         } else {
             list.add(new Product(30L, bundle.getString("prod.30.name"), 4.50, bundle.getString("prod.30.desc"), catId));
             list.add(new Product(31L, bundle.getString("prod.31.name"), 5.00, bundle.getString("prod.31.desc"), catId));
+        } else if (catId == 3L) {
+            list.add(new Product(31L, bundle.getString("prod.31.name"), 5.00, bundle.getString("prod.31.desc"), catId));
+            list.add(new Product(32L, bundle.getString("prod.32.name"), 6.50, bundle.getString("prod.32.desc"), catId));
+            list.add(new Product(33L, bundle.getString("prod.33.name"), 4.00, bundle.getString("prod.33.desc"), catId));
+        } else if (catId == 4L) {
+            list.add(new Product(40L, bundle.getString("prod.40.name"), 4.50, bundle.getString("prod.40.desc"), catId));
+            list.add(new Product(41L, bundle.getString("prod.41.name"), 4.50, bundle.getString("prod.41.desc"), catId));
+            list.add(new Product(42L, bundle.getString("prod.42.name"), 3.50, bundle.getString("prod.42.desc"), catId));
         }
     }
 }

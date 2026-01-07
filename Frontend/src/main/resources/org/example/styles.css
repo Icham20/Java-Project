@@ -204,4 +204,31 @@
 /* Texte foncé spécifique pour le Panier (sur fond blanc) */
 .text-dark {
     -fx-text-fill: #1e293b; /* Gris foncé / Bleu nuit */
+
+/* Style pour les boutons de quantité */
+.btn-quantity {
+    -fx-background-color: #e2e8f0;
+    -fx-text-fill: #475569;
+    -fx-font-weight: bold;
+    -fx-min-width: 35px;
+    -fx-min-height: 35px;
+    -fx-background-radius: 17px;
+}
+
+.btn-quantity:hover {
+    -fx-background-color: #cbd5e1;
+}
+
+/* Style pour le bouton supprimer */
+.btn-delete {
+    -fx-background-color: #fee2e2;
+    -fx-text-fill: #dc2626;
+    -fx-font-size: 18px;
+    -fx-min-width: 45px;
+    -fx-min-height: 45px;
+    -fx-background-radius: 22px;
+}
+
+.btn-delete:hover {
+    -fx-background-color: #fca5a5;
 }
