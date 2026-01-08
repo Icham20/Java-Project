@@ -1,3 +1,5 @@
+
+
 package org.example.controller;
 
 import javafx.application.Platform;
@@ -19,6 +21,7 @@ import org.example.utils.InterfaceTools;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.ResourceBundle;
 
 /**
@@ -30,6 +33,8 @@ public class SmartSuggestionPopup {
     private final CartService cartService;
     private long lastSuggestionTime = 0;
     private boolean suggestionPopupOpen = false;
+    private final Random random = new Random();
+
 
     public SmartSuggestionPopup(ApiService apiService, CartService cartService) {
         this.apiService = apiService;
@@ -46,13 +51,25 @@ public class SmartSuggestionPopup {
                 // Logique : Si Plat (2) ajouté, proposer Entrée (1), Dessert (3) et Boisson (4)
                 if (justAddedProduct.getCategoryId() == 2) {
                     List<Product> starters = apiService.getProductsByCategory(1L);
-                    if(!starters.isEmpty()) suggestions.add(starters.get(0));
+                    if(!starters.isEmpty()) {
+                        // MODIFICATION ICI
+                        Product randomStarter = starters.get(random.nextInt(starters.size()));
+                        suggestions.add(randomStarter);
+                    }
 
                     List<Product> desserts = apiService.getProductsByCategory(3L);
-                    if(!desserts.isEmpty()) suggestions.add(desserts.get(0));
+                    if(!desserts.isEmpty()) {
+                        // MODIFICATION ICI
+                        Product randomDessert = desserts.get(random.nextInt(desserts.size()));
+                        suggestions.add(randomDessert);
+                    }
 
                     List<Product> drinks = apiService.getProductsByCategory(4L);
-                    if(!drinks.isEmpty()) suggestions.add(drinks.get(0));
+                    if(!drinks.isEmpty()) {
+                        // MODIFICATION ICI
+                        Product randomDrink = drinks.get(random.nextInt(drinks.size()));
+                        suggestions.add(randomDrink);
+                    }
                 }
 
                 if (!suggestions.isEmpty()) {
@@ -73,7 +90,7 @@ public class SmartSuggestionPopup {
         Stage popup = new Stage();
         popup.initOwner(ownerStage);
         popup.initModality(Modality.WINDOW_MODAL);
-        popup.initStyle(StageStyle.UTILITY);
+        popup.initStyle(StageStyle.UNDECORATED);
 
         VBox root = new VBox(15);
         root.setPadding(new Insets(25));
@@ -144,18 +161,234 @@ public class SmartSuggestionPopup {
         Button addBtn = new Button(bundle.getString("suggestion.add"));
         addBtn.setStyle("-fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 15; -fx-background-radius: 15; -fx-cursor: hand;");
 
+        // MODIFICATION PRINCIPALE ICI :
         addBtn.setOnAction(e -> {
-            List<String> options = new ArrayList<>();
-            if (product.getCategoryId() == 4) options.add(bundle.getString("option.with_ice"));
-            else if (product.getCategoryId() == 3) options.add("Standard");
-
-            cartService.addProduct(product, 1, options);
-            suggestionPopupOpen = false;
-            popup.close();
-            InterfaceTools.showQuickNotification("✅ " + mainController.getTranslateName(product) + " " + bundle.getString("notification.added"));
+            if (product.getCategoryId() == 4) { // BOISSON
+                showSimpleDrinkOptions(product, popup, bundle, mainController);
+            } else if (product.getCategoryId() == 3) { // DESSERT
+                showSimpleDessertOptions(product, popup, bundle, mainController);
+            } else {
+                // Pour les autres catégories (entrées, plats), ajouter directement
+                cartService.addProduct(product, 1, new ArrayList<>());
+                suggestionPopupOpen = false;
+                popup.close();
+                InterfaceTools.showQuickNotification("✅ " + mainController.getTranslateName(product) + " " + bundle.getString("notification.added"));
+            }
         });
 
         card.getChildren().addAll(name, price, addBtn);
         return card;
+    }
+
+    private void showSimpleDrinkOptions(Product drink, Stage parentPopup, ResourceBundle bundle, MainAppController mainController) {
+        // Créer un petit popup d'options
+        Stage optionsStage = new Stage();
+        optionsStage.initOwner(parentPopup);
+        optionsStage.initModality(Modality.WINDOW_MODAL);
+        optionsStage.initStyle(StageStyle.UNDECORATED);
+        optionsStage.setTitle(bundle.getString("drink.options.title"));
+
+        VBox optionsRoot = new VBox(15);
+        optionsRoot.setPadding(new Insets(20));
+        optionsRoot.setStyle("-fx-background-color: white; -fx-background-radius: 10;");
+
+        // Titre - Utiliser la clé qui existe
+        String drinkName = mainController.getTranslateName(drink);
+        Label title = new Label(bundle.getString("drink.options.for") + " " + drinkName);
+        title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1e293b;");
+
+        // Options selon le type de boisson
+        VBox optionsBox = new VBox(10);
+
+        if (drinkName.toLowerCase().contains("café") ||
+                drinkName.toLowerCase().contains("cafe") ||
+                drinkName.toLowerCase().contains("coffee")) {
+            // Options pour le café
+            Label coffeeLabel = new Label(bundle.getString("drink.options.coffee"));
+            coffeeLabel.setStyle("-fx-font-weight: bold;");
+
+            HBox coffeeOptions = new HBox(10);
+            coffeeOptions.setAlignment(Pos.CENTER_LEFT);
+
+            Button withCoffee = new Button(bundle.getString("drink.options.with_coffee"));
+            withCoffee.setStyle("-fx-background-color: #dbeafe; -fx-text-fill: #1e40af; -fx-font-weight: bold; -fx-padding: 8 15;");
+
+            Button withoutCoffee = new Button(bundle.getString("drink.options.without_coffee"));
+            withoutCoffee.setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #475569; -fx-font-weight: bold; -fx-padding: 8 15;");
+
+            withCoffee.setOnAction(ev -> {
+                List<String> options = new ArrayList<>();
+                options.add(bundle.getString("drink.options.with_coffee"));
+                cartService.addProduct(drink, 1, options);
+                optionsStage.close();
+                parentPopup.close();
+                suggestionPopupOpen = false;
+                InterfaceTools.showQuickNotification("✅ " + drinkName + " " + bundle.getString("notification.added"));
+            });
+
+            withoutCoffee.setOnAction(ev -> {
+                cartService.addProduct(drink, 1, new ArrayList<>());
+                optionsStage.close();
+                parentPopup.close();
+                suggestionPopupOpen = false;
+                InterfaceTools.showQuickNotification("✅ " + drinkName + " " + bundle.getString("notification.added"));
+            });
+
+            coffeeOptions.getChildren().addAll(withCoffee, withoutCoffee);
+            optionsBox.getChildren().addAll(coffeeLabel, coffeeOptions);
+
+        } else {
+            // Options pour les autres boissons (glaçons)
+            Label iceLabel = new Label(bundle.getString("drink.options.ice"));
+            iceLabel.setStyle("-fx-font-weight: bold;");
+
+            HBox iceOptions = new HBox(10);
+            iceOptions.setAlignment(Pos.CENTER_LEFT);
+
+            Button withIce = new Button(bundle.getString("drink.options.with_ice"));
+            withIce.setStyle("-fx-background-color: #dbeafe; -fx-text-fill: #1e40af; -fx-font-weight: bold; -fx-padding: 8 15;");
+
+            Button withoutIce = new Button(bundle.getString("drink.options.without_ice"));
+            withoutIce.setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #475569; -fx-font-weight: bold; -fx-padding: 8 15;");
+
+            withIce.setOnAction(ev -> {
+                List<String> options = new ArrayList<>();
+                options.add(bundle.getString("drink.options.with_ice"));
+                cartService.addProduct(drink, 1, options);
+                optionsStage.close();
+                parentPopup.close();
+                suggestionPopupOpen = false;
+                InterfaceTools.showQuickNotification("✅ " + drinkName + " " + bundle.getString("notification.added"));
+            });
+
+            withoutIce.setOnAction(ev -> {
+                List<String> options = new ArrayList<>();
+                options.add(bundle.getString("drink.options.without_ice"));
+                cartService.addProduct(drink, 1, options);
+                optionsStage.close();
+                parentPopup.close();
+                suggestionPopupOpen = false;
+                InterfaceTools.showQuickNotification("✅ " + drinkName + " " + bundle.getString("notification.added"));
+            });
+
+            iceOptions.getChildren().addAll(withIce, withoutIce);
+            optionsBox.getChildren().addAll(iceLabel, iceOptions);
+        }
+
+        // Bouton Annuler - Utiliser la clé qui existe
+        Button cancelBtn = new Button(bundle.getString("drink.options.cancel"));
+        cancelBtn.setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #64748b; -fx-padding: 8 20;");
+        cancelBtn.setOnAction(ev -> optionsStage.close());
+
+        optionsRoot.getChildren().addAll(title, optionsBox, cancelBtn);
+
+        Scene scene = new Scene(optionsRoot);
+        optionsStage.setScene(scene);
+        optionsStage.setResizable(false);
+        optionsStage.sizeToScene();
+        optionsStage.centerOnScreen();
+        optionsStage.show();
+    }
+
+    private void showSimpleDessertOptions(Product dessert, Stage parentPopup, ResourceBundle bundle, MainAppController mainController) {
+        String dessertName = mainController.getTranslateName(dessert);
+
+        // Créer une petite popup d'options
+        Stage optionsStage = new Stage();
+        optionsStage.initOwner(parentPopup);
+        optionsStage.initModality(Modality.WINDOW_MODAL);
+        optionsStage.initStyle(StageStyle.UNDECORATED);
+
+        // UTILISER LA CLÉ DE TRADUCTION
+        optionsStage.setTitle(bundle.getString("dessert.options.title"));
+
+        VBox optionsRoot = new VBox(15);
+        optionsRoot.setPadding(new Insets(20));
+        optionsRoot.setStyle("-fx-background-color: white; -fx-background-radius: 10;");
+
+        // Titre - UTILISER LA CLÉ DE TRADUCTION
+        Label title = new Label(bundle.getString("dessert.options.for") + " " + dessertName);
+        title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1e293b;");
+
+        // Options pour les desserts
+        VBox optionsBox = new VBox(10);
+
+        // Option café (pour certains desserts)
+        if (dessertName.toLowerCase().contains("nougat") ||
+                dessertName.toLowerCase().contains("perles") ||
+                dessertName.toLowerCase().contains("coconut") ||
+                dessertName.toLowerCase().contains("sesame")) {
+            // Desserts qui vont bien avec le café
+            Label coffeeLabel = new Label(bundle.getString("drink.options.coffee")); // Utiliser la même clé que pour les boissons
+            coffeeLabel.setStyle("-fx-font-weight: bold;");
+
+            HBox coffeeOptions = new HBox(10);
+            coffeeOptions.setAlignment(Pos.CENTER_LEFT);
+
+            // UTILISER LES CLÉS DE TRADUCTION
+            Button withCoffee = new Button(bundle.getString("dessert.options.with_coffee"));
+            withCoffee.setStyle("-fx-background-color: #fef3c7; -fx-text-fill: #92400e; -fx-font-weight: bold; -fx-padding: 8 15;");
+
+            Button withoutCoffee = new Button(bundle.getString("dessert.options.without"));
+            withoutCoffee.setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #475569; -fx-font-weight: bold; -fx-padding: 8 15;");
+
+            withCoffee.setOnAction(ev -> {
+                List<String> options = new ArrayList<>();
+                options.add(bundle.getString("dessert.options.with_coffee"));
+                cartService.addProduct(dessert, 1, options);
+                optionsStage.close();
+                parentPopup.close();
+                suggestionPopupOpen = false;
+                InterfaceTools.showQuickNotification("✅ " + dessertName + " " + bundle.getString("notification.added"));
+            });
+
+            withoutCoffee.setOnAction(ev -> {
+                cartService.addProduct(dessert, 1, new ArrayList<>());
+                optionsStage.close();
+                parentPopup.close();
+                suggestionPopupOpen = false;
+                InterfaceTools.showQuickNotification("✅ " + dessertName + " " + bundle.getString("notification.added"));
+            });
+
+            coffeeOptions.getChildren().addAll(withCoffee, withoutCoffee);
+            optionsBox.getChildren().addAll(coffeeLabel, coffeeOptions);
+        } else {
+            // Pour les fruits frais (mangue, papaye) - option simple
+            // ICI AUSSI, VOUS POURRIEZ AJOUTER UNE CLÉ DE TRADUCTION SI VOUS VOULEZ
+            Label simpleLabel = new Label("Votre dessert sera servi frais");
+            simpleLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #16a34a;");
+
+            HBox simpleOptions = new HBox(10);
+            simpleOptions.setAlignment(Pos.CENTER);
+
+            // Utiliser une clé de traduction
+            Button confirmBtn = new Button("🍨 " + bundle.getString("dessert.options.without"));
+            confirmBtn.setStyle("-fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 20;");
+
+            confirmBtn.setOnAction(ev -> {
+                cartService.addProduct(dessert, 1, new ArrayList<>());
+                optionsStage.close();
+                parentPopup.close();
+                suggestionPopupOpen = false;
+                InterfaceTools.showQuickNotification("✅ " + dessertName + " " + bundle.getString("notification.added"));
+            });
+
+            simpleOptions.getChildren().add(confirmBtn);
+            optionsBox.getChildren().addAll(simpleLabel, simpleOptions);
+        }
+
+        // Bouton Annuler - UTILISER LA CLÉ DE TRADUCTION
+        Button cancelBtn = new Button(bundle.getString("dessert.options.cancel"));
+        cancelBtn.setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #64748b; -fx-padding: 8 20;");
+        cancelBtn.setOnAction(ev -> optionsStage.close());
+
+        optionsRoot.getChildren().addAll(title, optionsBox, cancelBtn);
+
+        Scene scene = new Scene(optionsRoot);
+        optionsStage.setScene(scene);
+        optionsStage.setResizable(false);
+        optionsStage.sizeToScene();
+        optionsStage.centerOnScreen();
+        optionsStage.show();
     }
 }

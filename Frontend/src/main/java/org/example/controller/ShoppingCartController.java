@@ -107,7 +107,7 @@ public class ShoppingCartController {
             btnBack.getStyleClass().add("btn-secondary");
             btnBack.setOnAction(e -> mainController.showMenuScreen());
             Button btnPay = new Button(bundle.getString("cart.validate"));
-            btnPay.getStyleClass().add("btn-start");
+            btnPay.getStyleClass().add("btn-validate");
 
             // Action Payer
             btnPay.setOnAction(e -> {
@@ -179,19 +179,32 @@ public class ShoppingCartController {
     private void showConfirmationScreen(int orderId, ResourceBundle bundle) {
         VBox root = new VBox(30);
         root.setAlignment(Pos.CENTER);
+        root.setStyle("-fx-background-color: #f0fdf4;"); // Fond vert très clair
+
         Label icon = new Label("✅");
         icon.setStyle("-fx-font-size: 100px;");
+
         Label title = new Label(bundle.getString("confirm.title"));
-        title.getStyleClass().add("title-large");
+        title.setStyle("-fx-font-size: 48px; -fx-font-weight: bold; -fx-text-fill: #16a34a;"); // Vert
+
         Label message = new Label(bundle.getString("confirm.msg"));
-        message.getStyleClass().add("subtitle");
+        message.setStyle("-fx-font-size: 24px; -fx-text-fill: #475569; -fx-font-weight: bold;");
+
         Label orderNumber = new Label("#" + orderId);
-        orderNumber.setStyle("-fx-font-size: 80px; -fx-font-weight: bold; -fx-text-fill: #d97706;");
+        orderNumber.setStyle("-fx-font-size: 80px; -fx-font-weight: bold; -fx-text-fill: #16a34a;"); // Vert aussi
+
         Label waitMessage = new Label(bundle.getString("confirm.wait"));
-        waitMessage.setStyle("-fx-text-fill: #64748b; -fx-font-size: 20px;");
+        waitMessage.setStyle("-fx-text-fill: #64748b; -fx-font-size: 20px; -fx-font-style: italic;");
+
         Button btnNew = new Button(bundle.getString("confirm.new"));
-        btnNew.getStyleClass().add("btn-secondary");
+        btnNew.setStyle("-fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 22px; -fx-padding: 15 40; -fx-background-radius: 12; -fx-cursor: hand;");
+
+        // Effet hover pour le bouton
+        btnNew.setOnMouseEntered(e -> btnNew.setStyle("-fx-background-color: #059669; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 22px; -fx-padding: 15 40; -fx-background-radius: 12; -fx-cursor: hand;"));
+        btnNew.setOnMouseExited(e -> btnNew.setStyle("-fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 22px; -fx-padding: 15 40; -fx-background-radius: 12; -fx-cursor: hand;"));
+
         btnNew.setOnAction(e -> { cartService.clear(); mainController.showHomeScreen(); });
+
         root.getChildren().addAll(icon, title, message, orderNumber, waitMessage, btnNew);
         mainController.getMainLayout().setCenter(root);
     }
