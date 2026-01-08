@@ -518,98 +518,104 @@ public class MainController {
 
     // --- 4. ÉCRAN DU PANIER ---
     private void showCartScreen() {
-        VBox root = new VBox(20);
-        root.setPadding(new Insets(20, 40, 20, 40));
-        root.setAlignment(Pos.TOP_CENTER);
+        VBox root = new VBox();
+        root.setAlignment(Pos.CENTER);
+        root.setPadding(new Insets(20));
 
-        HBox header = new HBox(10);
+        VBox cartContainer = new VBox(20);
+        cartContainer.getStyleClass().add("cart-container");
+        cartContainer.setMaxWidth(850);
+
+        HBox header = new HBox(15);
         header.setAlignment(Pos.CENTER_LEFT);
 
         Label title = new Label(bundle.getString("cart.title"));
-        title.getStyleClass().add("h1");
+        title.setStyle("-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #1e293b;");
 
-        Label itemCount = new Label("(" + cartService.getItems().size() + " article(s))");
-        itemCount.setStyle("-fx-text-fill: #64748b; -fx-font-size: 18px;");
+        Label itemCount = new Label(cartService.getItems().size() + " " + bundle.getString("cart.article"));
+        itemCount.setStyle("-fx-text-fill: #64748b; -fx-font-size: 18px; " +
+                "-fx-background-color: #f1f5f9; -fx-padding: 5 15; " +
+                "-fx-background-radius: 20;");
 
         header.getChildren().addAll(title, itemCount);
 
         if (cartService.getItems().isEmpty()) {
-            VBox emptyCart = new VBox(30);
-            emptyCart.setAlignment(Pos.CENTER);
-            emptyCart.setPadding(new Insets(100, 0, 0, 0));
+            VBox emptyBox = new VBox(20);
+            emptyBox.setAlignment(Pos.CENTER);
+            emptyBox.setPadding(new Insets(50, 0, 50, 0));
 
-            Label emptyLabel = new Label("🛒 Votre panier est vide");
-            emptyLabel.setStyle("-fx-font-size: 28px; -fx-text-fill: #64748b;");
+            Label emptyEmoji = new Label("🛒");
+            emptyEmoji.setStyle("-fx-font-size: 60px;");
 
-            Label suggestion = new Label("Parcourez notre menu pour ajouter des plats !");
+            Label emptyText = new Label(bundle.getString("cart.empty"));
+            emptyText.setStyle("-fx-font-size: 24px; -fx-text-fill: #64748b; -fx-font-weight: bold;");
+
+            Label suggestion = new Label(bundle.getString("cart.empty.suggestion"));
             suggestion.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 18px;");
 
-            Button backToMenu = new Button("← Retour au menu");
-            backToMenu.getStyleClass().add("btn-primary");
-            backToMenu.setStyle("-fx-font-size: 18px; -fx-padding: 12 30;");
-            backToMenu.setOnAction(e -> showMenuScreen());
+            Button backBtn = new Button(bundle.getString("menu.back"));
+            backBtn.getStyleClass().add("btn-primary");
+            backBtn.setOnAction(e -> showMenuScreen());
 
-            emptyCart.getChildren().addAll(emptyLabel, suggestion, backToMenu);
-            root.getChildren().addAll(header, emptyCart);
-
+            emptyBox.getChildren().addAll(emptyEmoji, emptyText, suggestion, backBtn);
+            cartContainer.getChildren().addAll(header, new Separator(), emptyBox);
         } else {
             VBox itemsList = new VBox(15);
+            ScrollPane listScroll = new ScrollPane(itemsList);
+            listScroll.setFitToWidth(true);
+            listScroll.setPrefHeight(400);
+            listScroll.setStyle("-fx-background-color: transparent; -fx-background: transparent;");
+            listScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
 
             for (int i = 0; i < cartService.getItems().size(); i++) {
-                CartItem item = cartService.getItems().get(i);
-                itemsList.getChildren().add(createCartItemRow(item, i));
+                itemsList.getChildren().add(createCartItemRow(cartService.getItems().get(i), i));
             }
 
             Separator separator = new Separator();
 
-            HBox totalBox = new HBox(20);
+            HBox totalBox = new HBox(10);
             totalBox.setAlignment(Pos.CENTER_RIGHT);
-            totalBox.setPadding(new Insets(20, 0, 0, 0));
 
-            Label totalLabel = new Label("Total à payer : ");
-            totalLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+            Label totalLabel = new Label(bundle.getString("cart.total_pay"));
+            totalLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #64748b;");
 
             Label totalValue = new Label(String.format("%.2f €", cartService.getTotal()));
-            totalValue.getStyleClass().add("title-large");
-            totalValue.setStyle("-fx-font-size: 36px; -fx-text-fill: #d97706;");
+            totalValue.setStyle("-fx-font-size: 36px; -fx-font-weight: bold; -fx-text-fill: #d97706;");
 
             totalBox.getChildren().addAll(totalLabel, totalValue);
 
-            VBox clientBox = new VBox(10);
-            clientBox.setPadding(new Insets(20, 0, 0, 0));
+            VBox clientBox = new VBox(8);
+            clientBox.setAlignment(Pos.CENTER);
 
-            Label clientLabel = new Label("👤 " + bundle.getString("cart.client_placeholder"));
-            clientLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
+            Label lblClient = new Label(bundle.getString("cart.client_label"));
+            lblClient.setStyle("-fx-font-weight: bold; -fx-text-fill: #334155; -fx-font-size: 18px;");
 
             TextField txtClient = new TextField();
-            txtClient.setPromptText("Votre nom...");
-            txtClient.setStyle("-fx-font-size: 18px; -fx-padding: 12; -fx-background-radius: 8;");
-            txtClient.setPrefWidth(400);
+            txtClient.setPromptText(bundle.getString("cart.client_placeholder"));
+            txtClient.getStyleClass().add("cart-input");
+            txtClient.setMaxWidth(500);
 
-            clientBox.getChildren().addAll(clientLabel, txtClient);
+            clientBox.getChildren().addAll(lblClient, txtClient);
 
-            HBox buttons = new HBox(30);
-            buttons.setAlignment(Pos.CENTER);
-            buttons.setPadding(new Insets(40, 0, 0, 0));
+            HBox actions = new HBox(20);
+            actions.setAlignment(Pos.CENTER);
+            actions.setPadding(new Insets(20, 0, 0, 0));
 
-            Button continueBtn = new Button("← Continuer mes achats");
-            continueBtn.getStyleClass().add("btn-secondary");
-            continueBtn.setStyle("-fx-font-size: 18px; -fx-padding: 12 30;");
-            continueBtn.setOnAction(e -> showMenuScreen());
+            Button btnBack = new Button(bundle.getString("cart.continue"));
+            btnBack.getStyleClass().add("btn-secondary");
+            btnBack.setOnAction(e -> showMenuScreen());
 
-            Button validateBtn = new Button("✅ " + bundle.getString("cart.validate"));
-            validateBtn.getStyleClass().add("btn-start");
-            validateBtn.setStyle("-fx-font-size: 20px; -fx-padding: 12 50;");
+            Button btnPay = new Button(bundle.getString("cart.validate"));
+            btnPay.getStyleClass().add("btn-start");
 
-            validateBtn.setOnAction(e -> {
+            btnPay.setOnAction(e -> {
                 String clientName = txtClient.getText().trim();
                 if (clientName.isEmpty()) {
-                    showAlert("Veuillez saisir votre nom pour la commande.");
+                    showAlert("Veuillez saisir votre nom.");
                     txtClient.setStyle("-fx-border-color: #dc2626; -fx-border-width: 2;");
                     return;
                 }
 
-                // Construction de la commande
                 List<org.example.model.OrderItem> orderItems = new ArrayList<>();
                 for (CartItem ci : cartService.getItems()) {
                     orderItems.add(new org.example.model.OrderItem(
@@ -627,59 +633,78 @@ public class MainController {
                 );
 
                 int orderId = apiService.createOrder(newOrder);
-
                 if (orderId > 0) {
-                    System.out.println("✅ Commande envoyée avec succès : ID " + orderId);
                     showConfirmationScreen(orderId);
                 } else {
-                    showAlert("Erreur lors de l'envoi de la commande. Stock peut-être insuffisant.");
+                    showAlert("Erreur lors de l'envoi.");
                 }
             });
 
-            buttons.getChildren().addAll(continueBtn, validateBtn);
-            root.getChildren().addAll(header, itemsList, separator, totalBox, clientBox, buttons);
+            actions.getChildren().addAll(btnBack, btnPay);
+            cartContainer.getChildren().addAll(header, new Separator(), listScroll, separator, totalBox, clientBox, actions);
         }
 
-        ScrollPane scroll = new ScrollPane(root);
-        scroll.setFitToWidth(true);
-        scroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
-        mainLayout.setCenter(scroll);
+        root.getChildren().add(cartContainer);
+        ScrollPane mainScroll = new ScrollPane(root);
+        mainScroll.setFitToWidth(true);
+        mainScroll.setFitToHeight(true);
+        mainScroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        mainLayout.setCenter(mainScroll);
     }
 
-    // Nouvelle méthode pour créer une ligne d'article INTERACTIVE
+    // Nouvelle méthode pour créer une ligne d'article comme celle de votre collègue
     private HBox createCartItemRow(CartItem item, int index) {
         HBox row = new HBox(20);
         row.setPadding(new Insets(15));
         row.setAlignment(Pos.CENTER_LEFT);
-        row.setStyle("-fx-background-color: white; -fx-background-radius: 10; " +
-                "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 5,0,0,0);");
+        row.getStyleClass().add("cart-row");
 
-        // Image placeholder (ou image réelle si tu veux l'ajouter ici aussi)
-        Rectangle imgPlace = new Rectangle(80, 80, Color.web("#f1f5f9"));
-        imgPlace.setArcWidth(15);
-        imgPlace.setArcHeight(15);
+        // --- GESTION IMAGE ---
+        Node imageNode;
+        String imagePath = "/org/example/images/" + item.getProduct().getImageUrl();
 
-        // Informations produit
+        if (item.getProduct().getImageUrl() != null && !item.getProduct().getImageUrl().isEmpty() &&
+                getClass().getResource(imagePath) != null) {
+
+            ImageView imageView = new ImageView(new Image(getClass().getResourceAsStream(imagePath)));
+            imageView.setFitWidth(80);
+            imageView.setFitHeight(80);
+            imageView.setPreserveRatio(true);
+
+            Rectangle clip = new Rectangle(80, 80);
+            clip.setArcWidth(15);
+            clip.setArcHeight(15);
+            imageView.setClip(clip);
+
+            imageNode = imageView;
+        } else {
+            Rectangle imgPlace = new Rectangle(80, 80, Color.web("#f1f5f9"));
+            imgPlace.setArcWidth(15);
+            imgPlace.setArcHeight(15);
+            imageNode = imgPlace;
+        }
+
         VBox productInfo = new VBox(5);
-        productInfo.setPrefWidth(300);
+        productInfo.setAlignment(Pos.CENTER_LEFT);
 
         Label name = new Label(item.getProduct().getName());
-        name.setStyle("-fx-font-weight: bold; -fx-font-size: 18px;");
+        name.setStyle("-fx-font-weight: bold; -fx-font-size: 20px; -fx-text-fill: #1e293b;");
 
-        String optionsText = item.getOptions().isEmpty() ?
-                "Aucune option" : "Options: " + String.join(", ", item.getOptions());
-        Label options = new Label(optionsText);
-        options.setStyle("-fx-text-fill: #64748b; -fx-font-size: 14px;");
+        Label options = new Label(String.join(", ", item.getOptions()));
+        options.setStyle("-fx-text-fill: #64748b; -fx-font-size: 14px; -fx-font-style: italic;");
 
         productInfo.getChildren().addAll(name, options);
 
-        // Contrôle quantité
-        HBox quantityBox = new HBox(10);
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        // Contrôle de quantité avec design amélioré
+        HBox quantityBox = new HBox(15);
         quantityBox.setAlignment(Pos.CENTER);
+        quantityBox.getStyleClass().add("quantity-box");
 
         Button minusBtn = new Button("-");
-        minusBtn.setStyle("-fx-background-color: #e2e8f0; -fx-min-width: 35; -fx-min-height: 35; " +
-                "-fx-background-radius: 17; -fx-font-weight: bold; -fx-font-size: 16px;");
+        minusBtn.getStyleClass().add("btn-quantity");
         minusBtn.setOnAction(e -> {
             if (item.getQuantity() > 1) {
                 item.setQuantity(item.getQuantity() - 1);
@@ -690,12 +715,11 @@ public class MainController {
             }
         });
 
-        Label quantityLabel = new Label("×" + item.getQuantity());
-        quantityLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-min-width: 50;");
+        Label quantityLabel = new Label(String.valueOf(item.getQuantity()));
+        quantityLabel.getStyleClass().add("label-quantity");
 
         Button plusBtn = new Button("+");
-        plusBtn.setStyle("-fx-background-color: #e2e8f0; -fx-min-width: 35; -fx-min-height: 35; " +
-                "-fx-background-radius: 17; -fx-font-weight: bold; -fx-font-size: 16px;");
+        plusBtn.getStyleClass().add("btn-quantity");
         plusBtn.setOnAction(e -> {
             item.setQuantity(item.getQuantity() + 1);
             showCartScreen();
@@ -703,21 +727,21 @@ public class MainController {
 
         quantityBox.getChildren().addAll(minusBtn, quantityLabel, plusBtn);
 
-        // Prix
         Label price = new Label(String.format("%.2f €", item.getTotalPrice()));
-        price.setStyle("-fx-font-weight: bold; -fx-font-size: 18px; -fx-min-width: 100;");
+        price.setStyle("-fx-font-weight: bold; -fx-font-size: 20px; " +
+                "-fx-text-fill: #d97706; -fx-min-width: 90; " +
+                "-fx-alignment: center-right;");
 
-        // Bouton supprimer
-        Button deleteBtn = new Button("🗑️");
-        deleteBtn.setStyle("-fx-background-color: #fee2e2; -fx-text-fill: #dc2626; " +
-                "-fx-min-width: 45; -fx-min-height: 45; -fx-background-radius: 22; " +
-                "-fx-font-size: 18px;");
+        Button deleteBtn = new Button("🗑");
+        deleteBtn.setStyle("-fx-background-color: transparent; " +
+                "-fx-text-fill: #ef4444; -fx-font-size: 24px; " +
+                "-fx-cursor: hand; -fx-padding: 0 10 0 10;");
         deleteBtn.setOnAction(e -> {
             cartService.removeItem(index);
             showCartScreen();
         });
 
-        row.getChildren().addAll(imgPlace, productInfo, quantityBox, price, deleteBtn);
+        row.getChildren().addAll(imageNode, productInfo, spacer, quantityBox, price, deleteBtn);
         return row;
     }
 
