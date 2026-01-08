@@ -64,4 +64,17 @@ public class ApiService {
         }
         return -1;
     }
+    public List<Product> getAllProducts() {
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            HttpGet request = new HttpGet(BASE_URL + "/products");
+            try (CloseableHttpResponse response = client.execute(request)) {
+                return mapper.readValue(response.getEntity().getContent(), new TypeReference<List<Product>>(){});
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
 }
+
+

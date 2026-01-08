@@ -3,14 +3,19 @@ package org.example.services;
 import org.example.model.CartItem;
 import org.example.model.Product;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class CartService {
     private static CartService instance;
     private final List<CartItem> items;
+    private final ApiService apiService;
 
     private CartService() {
         items = new ArrayList<>();
+        apiService = new ApiService();
     }
 
     public static CartService getInstance() {
@@ -84,4 +89,63 @@ public class CartService {
             items.get(index).setQuantity(newQuantity);
         }
     }
+
+    // NOUVELLE MÉTHODE : Récupérer toutes les suggestions pour un plat donné
+    public List<Product> getLimitedSuggestions(Product mainProduct) {
+        List<Product> allProducts = apiService.getAllProducts();
+        List<Product> suggestions = new ArrayList<>();
+
+        Set<Long> productIdsInCart = items.stream()
+                .map(item -> item.getProduct().getId())
+                .collect(Collectors.toSet());
+
+        List<Product> availableProducts = allProducts.stream()
+                .filter(p -> !p.getId().equals(mainProduct.getId()))
+                .filter(p -> !productIdsInCart.contains(p.getId()))
+                .filter(Product::isAvailable)
+                .collect(Collectors.toList());
+
+        // Créer une "graine" basée sur le plat pour avoir des suggestions constantes
+        String seedString = mainProduct.getName() + mainProduct.getId();
+        int seed = Math.abs(seedString.hashCode());
+
+        // Fonction pour sélectionner aléatoirement mais de manière constante
+        java.util.Random random = new java.util.Random(seed);
+
+        if (mainProduct.getCategoryId() == 2) { // PLAT
+            // Desserts
+            List<Product> desserts = availableProducts.stream()
+                    .filter(p -> p.getCategoryId() == 3)
+                    .collect(Collectors.toList());
+            if (!desserts.isEmpty()) {
+                suggestions.add(desserts.get(random.nextInt(desserts.size())));
+            }
+
+            // Boissons
+            List<Product> drinks = availableProducts.stream()
+                    .filter(p -> p.getCategoryId() == 4)
+                    .collect(Collectors.toList());
+            if (!drinks.isEmpty()) {
+                suggestions.add(drinks.get(random.nextInt(drinks.size())));
+            }
+
+            // Entrées
+            List<Product> entrees = availableProducts.stream()
+                    .filter(p -> p.getCategoryId() == 1)
+                    .collect(Collectors.toList());
+            if (!entrees.isEmpty()) {
+                suggestions.add(entrees.get(random.nextInt(entrees.size())));
+            }
+        }
+        // ... autres catégories similaires
+
+        return suggestions.stream()
+                .distinct()
+                .limit(3)
+                .collect(Collectors.toList());
+    }
+
+
 }
+
+

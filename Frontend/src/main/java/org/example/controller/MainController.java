@@ -1,5 +1,6 @@
 package org.example.controller;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -10,16 +11,26 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.TextAlignment;
 import org.example.model.CartItem;
 import org.example.services.CartService;
 import org.example.model.Category;
 import org.example.model.Product;
 import org.example.services.ApiService;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.ResourceBundle;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import javafx.animation.PauseTransition;
+import javafx.geometry.Rectangle2D;
+import javafx.stage.*;
+import javafx.util.Duration;
+import javafx.scene.Scene;
+
+
+
+
+
 
 public class MainController {
 
@@ -480,7 +491,14 @@ public class MainController {
         btnAddCart.setOnAction(e -> {
             List<String> options = optionsSupplier.get();
             cartService.addProduct(product, spinner.getValue(), options);
-            showMenuScreen();
+
+            // Afficher les suggestions intelligentes après l'ajout
+            showSmartSuggestionsAfterAdding(product);
+
+            // Retour au menu avec un petit délai
+            PauseTransition delay = new PauseTransition(Duration.millis(100));
+            delay.setOnFinished(event -> showMenuScreen());
+            delay.play();
         });
 
         actions.getChildren().addAll(spinner, btnAddCart);
@@ -732,6 +750,310 @@ public class MainController {
 
         root.getChildren().addAll(icon, title, message, orderNumber, waitMessage, btnNew);
         mainLayout.setCenter(root);
+    }
+
+    // Ajoutez cette variable de classe
+    private long lastSuggestionTime = 0;
+    // Dans MainController, remplacez la méthode showDessertSuggestionsAfterAdding par :
+    private boolean suggestionPopupOpen = false;
+    private void showSmartSuggestionsAfterAdding(Product justAddedProduct) {
+        System.out.println("🟢 Début des suggestions pour: " + justAddedProduct.getName());
+
+        // Vérifier si une popup est déjà ouverte
+        if (suggestionPopupOpen) {
+            System.out.println("⚠️ Popup déjà ouverte");
+            return;
+        }
+
+        // Réduire le délai à 1 seconde
+        if (System.currentTimeMillis() - lastSuggestionTime < 1000) {
+            System.out.println("⚠️ Suggestions trop récentes");
+            return;
+        }
+
+        Platform.runLater(() -> {
+            try {
+                // Utiliser la nouvelle méthode limitée
+                List<Product> suggestions = cartService.getLimitedSuggestions(justAddedProduct);
+
+                System.out.println("🎯 " + suggestions.size() + " suggestions limitées trouvées:");
+                for (Product p : suggestions) {
+                    System.out.println("  - " + p.getName() + " (Catégorie: " + p.getCategoryId() + ")");
+                }
+
+                if (!suggestions.isEmpty()) {
+                    lastSuggestionTime = System.currentTimeMillis();
+
+                    PauseTransition delay = new PauseTransition(Duration.millis(500));
+                    delay.setOnFinished(e -> {
+                        createLimitedSuggestionPopup(suggestions, justAddedProduct);
+                    });
+                    delay.play();
+                } else {
+                    System.out.println("ℹ️ Aucune suggestion disponible");
+                }
+            } catch (Exception ex) {
+                System.err.println("❌ Erreur: " + ex.getMessage());
+            }
+        });
+    }
+
+    // Nouvelle méthode pour créer la popup de suggestions intelligentes
+    private void createLimitedSuggestionPopup(List<Product> suggestions, Product mainProduct) {
+        if (suggestionPopupOpen) {
+            return;
+        }
+
+        if (mainLayout.getScene() == null || mainLayout.getScene().getWindow() == null) {
+            return;
+        }
+
+        suggestionPopupOpen = true;
+
+        Stage popup = new Stage();
+        popup.initOwner(mainLayout.getScene().getWindow());
+        popup.initModality(Modality.WINDOW_MODAL);
+        popup.setTitle("Complétez votre commande !");
+        popup.initStyle(StageStyle.UTILITY);
+
+        VBox root = new VBox(15);
+        root.setPadding(new Insets(25));
+        root.setStyle("-fx-background-color: #f8fafc; -fx-border-color: #d97706; -fx-border-width: 3;");
+
+        // Titre principal
+        Label title = new Label("✨ Complétez votre " + mainProduct.getName() + " !");
+        title.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #1e293b;");
+
+        Label subtitle = new Label("Ces produits iraient parfaitement avec votre sélection");
+        subtitle.setStyle("-fx-font-size: 14px; -fx-text-fill: #64748b;");
+
+        // Grille des suggestions (maximum 3)
+        HBox suggestionsGrid = new HBox(20);
+        suggestionsGrid.setAlignment(Pos.CENTER);
+        suggestionsGrid.setPadding(new Insets(20, 0, 20, 0));
+
+        for (Product product : suggestions) {
+            suggestionsGrid.getChildren().add(createSimpleSuggestionCard(product, popup));
+        }
+
+        // Bouton "Passer"
+        Button skipBtn = new Button("Non merci, je garde ma commande actuelle");
+        skipBtn.setStyle("-fx-background-color: #e2e8f0; " +
+                "-fx-text-fill: #475569; " +
+                "-fx-font-weight: bold; " +
+                "-fx-padding: 10 20; " +
+                "-fx-background-radius: 20;");
+        skipBtn.setOnAction(e -> {
+            suggestionPopupOpen = false;
+            popup.close();
+        });
+
+        root.getChildren().addAll(title, subtitle, suggestionsGrid, skipBtn);
+
+        Scene scene = new Scene(root);
+        popup.setScene(scene);
+        popup.setResizable(false);
+        popup.sizeToScene();
+
+        // Gestion de la fermeture
+        popup.setOnHidden(e -> {
+            suggestionPopupOpen = false;
+        });
+
+        popup.setOnCloseRequest(e -> {
+            suggestionPopupOpen = false;
+        });
+
+        popup.show();
+        popup.centerOnScreen();
+    }
+
+    // Méthode pour créer une section de catégorie
+    private VBox createCategorySection(String categoryTitle, List<Product> products, Stage popup) {
+        VBox categoryBox = new VBox(10);
+
+        // Titre de la catégorie
+        Label categoryLabel = new Label(categoryTitle);
+        categoryLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #d97706;");
+
+        // Grille de produits
+        HBox productsBox = new HBox(15);
+        productsBox.setAlignment(Pos.CENTER);
+
+        for (Product product : products) {
+            productsBox.getChildren().add(createSimpleSuggestionCard(product, popup));
+        }
+
+        categoryBox.getChildren().addAll(categoryLabel, productsBox);
+        return categoryBox;
+    }
+
+    // Modifiez createSimpleDessertCard pour devenir createSuggestionCard
+    private VBox createSimpleSuggestionCard(Product product, Stage popup) {
+        VBox card = new VBox(10);
+        card.setAlignment(Pos.CENTER);
+        card.setPadding(new Insets(15));
+        card.setPrefWidth(180); // Légèrement plus large pour l'image
+        card.setStyle("-fx-background-color: white; " +
+                "-fx-background-radius: 10; " +
+                "-fx-border-color: #fbbf24; " +
+                "-fx-border-width: 1; " +
+                "-fx-border-radius: 10; " +
+                "-fx-cursor: hand;");
+
+        // Effet hover
+        card.setOnMouseEntered(e -> {
+            card.setStyle("-fx-background-color: white; " +
+                    "-fx-background-radius: 10; " +
+                    "-fx-border-color: #d97706; " +
+                    "-fx-border-width: 2; " +
+                    "-fx-border-radius: 10; " +
+                    "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2);");
+        });
+
+        card.setOnMouseExited(e -> {
+            card.setStyle("-fx-background-color: white; " +
+                    "-fx-background-radius: 10; " +
+                    "-fx-border-color: #fbbf24; " +
+                    "-fx-border-width: 1; " +
+                    "-fx-border-radius: 10;");
+        });
+
+        // --- IMAGE DU PRODUIT (au lieu de l'emoji) ---
+        Node imageNode;
+        String imagePath = "/org/example/images/" + product.getImageUrl();
+
+        // Vérifier si l'image existe dans les ressources
+        if (product.getImageUrl() != null && !product.getImageUrl().isEmpty() &&
+                getClass().getResource(imagePath) != null) {
+
+            // Charger l'image réelle
+            ImageView imageView = new ImageView(new Image(getClass().getResourceAsStream(imagePath)));
+            imageView.setFitWidth(120); // Taille adaptée pour la popup
+            imageView.setFitHeight(120);
+            imageView.setPreserveRatio(true);
+
+            // Arrondir les coins de l'image
+            Rectangle clip = new Rectangle(120, 120);
+            clip.setArcWidth(15);
+            clip.setArcHeight(15);
+            imageView.setClip(clip);
+
+            imageNode = imageView;
+        } else {
+            // Fallback : rectangle coloré avec icône
+            StackPane imagePlaceholder = new StackPane();
+            Rectangle imgPlace = new Rectangle(120, 120, getColorForCategory(product.getCategoryId()));
+            imgPlace.setArcWidth(15);
+            imgPlace.setArcHeight(15);
+
+            // Icône en overlay
+            Label iconLabel = new Label(getIconForCategory(product.getCategoryId()));
+            iconLabel.setStyle("-fx-font-size: 30px; -fx-text-fill: white;");
+
+            imagePlaceholder.getChildren().addAll(imgPlace, iconLabel);
+            imageNode = imagePlaceholder;
+        }
+
+        // Nom (tronqué si trop long)
+        String productName = product.getName();
+        Label name = new Label(productName);
+        name.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1e293b;");
+        name.setWrapText(true);
+        name.setMaxWidth(150);
+        name.setTextAlignment(TextAlignment.CENTER);
+
+        // Prix
+        Label price = new Label(String.format("%.2f €", product.getPrice()));
+        price.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #d97706;");
+
+        // Bouton Ajouter
+        Button addBtn = new Button("Ajouter");
+        addBtn.setStyle("-fx-background-color: #10b981; " +
+                "-fx-text-fill: white; " +
+                "-fx-font-weight: bold; " +
+                "-fx-padding: 8 15; " +
+                "-fx-background-radius: 15; " +
+                "-fx-cursor: hand;");
+
+        addBtn.setOnAction(e -> {
+            // Options par défaut selon la catégorie
+            List<String> options = new ArrayList<>();
+            if (product.getCategoryId() == 4L) { // Boisson
+                options.add("Avec Glaçons");
+            } else if (product.getCategoryId() == 3L) { // Dessert
+                options.add("Standard");
+            }
+
+            cartService.addProduct(product, 1, options);
+            suggestionPopupOpen = false;
+            popup.close();
+            showQuickNotification("✅ " + product.getName() + " ajouté !");
+        });
+
+        card.getChildren().addAll(imageNode, name, price, addBtn);
+        return card;
+    }
+
+    // Méthode utilitaire pour les icônes
+    private String getIconForCategory(Long categoryId) {
+        if (categoryId == null) return "📦";
+
+        switch (categoryId.intValue()) {
+            case 1: return "🥟"; // Entrées
+            case 2: return "🍛"; // Plats
+            case 3: return "🍨"; // Desserts
+            case 4: return "🥤"; // Boissons
+            default: return "📦";
+        }
+    }
+    private Color getColorForCategory(Long categoryId) {
+        if (categoryId == null) return Color.web("#94a3b8"); // Gris
+
+        switch (categoryId.intValue()) {
+            case 1: return Color.web("#fbbf24"); // Orange pour entrées
+            case 2: return Color.web("#ef4444"); // Rouge pour plats
+            case 3: return Color.web("#8b5cf6"); // Violet pour desserts
+            case 4: return Color.web("#3b82f6"); // Bleu pour boissons
+            default: return Color.web("#94a3b8"); // Gris par défaut
+        }
+    }
+
+
+    // Méthode utilitaire pour notification rapide
+    private void showQuickNotification(String message) {
+        Stage notifStage = new Stage();
+        notifStage.initStyle(StageStyle.UNDECORATED);
+        notifStage.initModality(Modality.NONE);
+
+        VBox notifBox = new VBox(10);
+        notifBox.setAlignment(Pos.CENTER);
+        notifBox.setPadding(new Insets(20));
+        notifBox.setStyle("-fx-background-color: #d1fae5; " +
+                "-fx-background-radius: 10; " +
+                "-fx-border-color: #10b981; " +
+                "-fx-border-width: 2; " +
+                "-fx-border-radius: 10;");
+
+        Label notifLabel = new Label(message);
+        notifLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #065f46;");
+
+        notifBox.getChildren().add(notifLabel);
+
+        Scene notifScene = new Scene(notifBox);
+        notifStage.setScene(notifScene);
+
+        // Positionner en bas à droite
+        Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
+        notifStage.setX(screenBounds.getWidth() - 350);
+        notifStage.setY(screenBounds.getHeight() - 150);
+
+        notifStage.show();
+
+        // Fermer automatiquement après 2 secondes
+        PauseTransition delay = new PauseTransition(Duration.seconds(2));
+        delay.setOnFinished(event -> notifStage.close());
+        delay.play();
     }
 
     // --- MÉTHODES UTILITAIRES ---
