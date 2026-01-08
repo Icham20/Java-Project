@@ -34,9 +34,6 @@ public class ProductDTO {
     @JsonProperty("spicy")
     private boolean spicy;             // Pour l'icône 🌶️ (épicé)
 
-    @JsonProperty("vegetarian")
-    private boolean vegetarian;        // Pour l'icône 🥬 (végétarien)
-
     @JsonProperty("available")
     private boolean available;         // Pour griser si non disponible
 
@@ -61,7 +58,6 @@ public class ProductDTO {
         this.price = product.getPrice();
         this.imageUrl = product.getImageUrl();
         this.spicy = product.isSpicy();
-        this.vegetarian = product.isVegetarian();
         
         // Logique interne : stock <= 0 signifie que le produit devient indisponible
         this.available = product.isAvailable() && (product.getStockQuantity() > 0);
@@ -124,14 +120,6 @@ public class ProductDTO {
         this.spicy = spicy;
     }
 
-    public boolean isVegetarian() {
-        return vegetarian;
-    }
-
-    public void setVegetarian(boolean vegetarian) {
-        this.vegetarian = vegetarian;
-    }
-
     public boolean isAvailable() {
         return available;
     }
@@ -162,14 +150,6 @@ public class ProductDTO {
      */
     public String getSpicyIcon() {
         return spicy ? "🌶️" : "";
-    }
-
-    /**
-     * Méthode utilitaire pour le frontend.
-     * @return L'icône végétarien si applicable
-     */
-    public String getVegetarianIcon() {
-        return vegetarian ? "🥬" : "";
     }
 
     /**

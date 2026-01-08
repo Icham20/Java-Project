@@ -266,14 +266,9 @@ public class MainController {
 
         HBox indicators = new HBox(10);
         if (product.isSpicy()) {
-            Label spicyLabel = new Label("🌶️ Épicé");
+            Label spicyLabel = new Label("Épicé");
             spicyLabel.setStyle("-fx-text-fill: #dc2626; -fx-font-size: 14px;");
             indicators.getChildren().add(spicyLabel);
-        }
-        if (product.isVegetarian()) {
-            Label vegLabel = new Label("🥬 Végétarien");
-            vegLabel.setStyle("-fx-text-fill: #16a34a; -fx-font-size: 14px;");
-            indicators.getChildren().add(vegLabel);
         }
 
         HBox bottomRow = new HBox(20);
@@ -365,14 +360,9 @@ public class MainController {
 
         HBox productIndicators = new HBox(20);
         if (product.isSpicy()) {
-            Label spicyLabel = new Label("🌶️ Ce plat est épicé");
+            Label spicyLabel = new Label("Épicé");
             spicyLabel.setStyle("-fx-text-fill: #dc2626; -fx-font-size: 18px;");
             productIndicators.getChildren().add(spicyLabel);
-        }
-        if (product.isVegetarian()) {
-            Label vegLabel = new Label("🥬 Plat végétarien");
-            vegLabel.setStyle("-fx-text-fill: #16a34a; -fx-font-size: 18px;");
-            productIndicators.getChildren().add(vegLabel);
         }
 
         Label price = new Label(String.format("%.2f €", product.getPrice()));

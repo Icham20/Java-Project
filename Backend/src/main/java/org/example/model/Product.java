@@ -8,13 +8,12 @@ public class Product {
     private int categoryId;
     private String imageUrl;
     private boolean isSpicy;
-    private boolean isVegetarian;
     private boolean available;
     private int stockQuantity; // Champ interne, non exposé par le DTO
 
     public Product() {}
 
-    public Product(int id, String name, String description, double price, int categoryId, String imageUrl, boolean isSpicy, boolean isVegetarian, boolean available, int stockQuantity) {
+    public Product(int id, String name, String description, double price, int categoryId, String imageUrl, boolean isSpicy, boolean available, int stockQuantity) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -22,7 +21,6 @@ public class Product {
         this.categoryId = categoryId;
         this.imageUrl = imageUrl;
         this.isSpicy = isSpicy;
-        this.isVegetarian = isVegetarian;
         this.available = available;
         this.stockQuantity = stockQuantity;
     }
@@ -41,8 +39,6 @@ public class Product {
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     public boolean isSpicy() { return isSpicy; }
     public void setSpicy(boolean spicy) { isSpicy = spicy; }
-    public boolean isVegetarian() { return isVegetarian; }
-    public void setVegetarian(boolean vegetarian) { isVegetarian = vegetarian; }
     public boolean isAvailable() { return available; }
     public void setAvailable(boolean available) { this.available = available; }
     public int getStockQuantity() { return stockQuantity; }

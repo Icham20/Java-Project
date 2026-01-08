@@ -16,14 +16,13 @@ public class Product {
     // Champs supplémentaires venant du DTO backend
     private String imageUrl;
     private boolean spicy;
-    private boolean vegetarian;
     private boolean available;
     private int stockQuantity;
 
     public Product() {}
 
     public Product(Long id, String name, double price, String description, Long categoryId,
-                   String imageUrl, boolean spicy, boolean vegetarian, boolean available, int stockQuantity) {
+                   String imageUrl, boolean spicy, boolean available, int stockQuantity) {
         this.id = id;
         this.name = name;
         this.price = price;
@@ -31,7 +30,6 @@ public class Product {
         this.categoryId = categoryId;
         this.imageUrl = imageUrl;
         this.spicy = spicy;
-        this.vegetarian = vegetarian;
         this.available = available;
         this.stockQuantity = stockQuantity;
     }
@@ -60,9 +58,6 @@ public class Product {
 
     public boolean isSpicy() { return spicy; }
     public void setSpicy(boolean spicy) { this.spicy = spicy; }
-
-    public boolean isVegetarian() { return vegetarian; }
-    public void setVegetarian(boolean vegetarian) { this.vegetarian = vegetarian; }
 
     public boolean isAvailable() { return available; }
     public void setAvailable(boolean available) { this.available = available; }
