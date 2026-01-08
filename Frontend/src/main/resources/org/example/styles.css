@@ -30,7 +30,7 @@
 
 .h1 { -fx-font-size: 36px; -fx-font-weight: bold; -fx-text-fill: #1e293b; }
 .h2 { -fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #1e293b; }
-.price-text { -fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #d97706; }
+.price-text { -fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #fbbf24; }
 
 /* === BOUTONS === */
 .btn-start {
@@ -221,4 +221,32 @@
     -fx-text-fill: #0f172a;
     -fx-alignment: center;
     -fx-min-width: 40px;
+}
+
+/* === BOUTON VALIDER (VERT) === */
+.btn-validate {
+    -fx-background-color: #10b981; /* Vert émeraude */
+    -fx-text-fill: white;
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 12;
+    -fx-padding: 15 40;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 5);
+    -fx-border-color: rgba(255,255,255,0.2);
+    -fx-border-radius: 12;
+    -fx-border-width: 2;
+}
+
+.btn-validate:hover {
+    -fx-background-color: #059669; /* Vert plus foncé au survol */
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+    -fx-effect: dropshadow(three-pass-box, #10b981, 20, 0.4, 0, 0);
+}
+
+.btn-validate:pressed {
+    -fx-background-color: #047857;
+    -fx-scale-x: 0.95;
+    -fx-scale-y: 0.95;
 }
