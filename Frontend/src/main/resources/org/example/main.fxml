@@ -4,7 +4,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.control.Label?>
 
-<BorderPane fx:id="mainLayout" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.controller.MainController">
+<BorderPane fx:id="mainLayout" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.controller.MainAppController">
    <center>
       <VBox alignment="CENTER">
          <Label text="Chargement..." />
