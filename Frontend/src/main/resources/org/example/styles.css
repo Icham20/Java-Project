@@ -1,21 +1,15 @@
-/* =========================================
-   THÈME RESTAURANT ASIATIQUE - DARK MOOD
-   Ambiance tamisée, premium et moderne.
-   ========================================= */
-
 .root {
     -fx-font-family: 'Segoe UI', sans-serif;
-    /* SI TU VEUX UNE IMAGE À LA PLACE, DÉCOMMENTE LES LIGNES CI-DESSOUS : */
-    -fx-background-image: url("accueil.jpg");
+    -fx-background-image: url("images/accueil.jpg");
     -fx-background-size: cover;
     -fx-background-position: center;
 }
 
-/* === TYPOGRAPHIE (Texte clair sur fond sombre) === */
+/* === TYPOGRAPHIE === */
 .title-large {
     -fx-font-size: 64px;
     -fx-font-weight: bold;
-    -fx-text-fill: #fff7ed; /* Blanc cassé */
+    -fx-text-fill: #fff7ed;
     -fx-effect: dropshadow(gaussian, black, 10, 0.5, 0, 0);
 }
 
@@ -66,17 +60,17 @@
     -fx-background-color: #334155;
 }
 
-/* Bouton Secondaire (Retour) - MIS A JOUR POUR VISIBILITÉ */
+/* Bouton Secondaire (Retour) */
 .btn-secondary {
-    -fx-background-color: #e2e8f0; /* Gris clair OPAQUE */
-    -fx-text-fill: #334155;        /* Texte Foncé */
+    -fx-background-color: #e2e8f0;
+    -fx-text-fill: #334155;
     -fx-border-color: #cbd5e1;
     -fx-border-width: 2;
-    -fx-border-radius: 50;         /* Arrondi complet */
+    -fx-border-radius: 50;
     -fx-background-radius: 50;
-    -fx-font-size: 20px;           /* Texte plus gros */
+    -fx-font-size: 20px;
     -fx-font-weight: bold;
-    -fx-padding: 15 40;            /* Plus large pour le tactile */
+    -fx-padding: 15 40;
     -fx-cursor: hand;
 }
 .btn-secondary:hover {
@@ -154,19 +148,19 @@
     -fx-scale-y: 0.95;
 }
 
-/* === NOUVEAU STYLE PANIER (DESIGN CARTE BLANCHE) === */
+/* === PANIER  === */
 
 /* Le conteneur blanc au centre */
 .cart-container {
-    -fx-background-color: white; /* Blanc OPAQUE */
+    -fx-background-color: white;
     -fx-background-radius: 20;
-    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 50, 0, 0, 10); /* Grosse ombre */
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 50, 0, 0, 10);
     -fx-padding: 30;
 }
 
 /* Ligne d'un article dans le panier */
 .cart-row {
-    -fx-background-color: #f8fafc; /* Gris très clair */
+    -fx-background-color: #f8fafc;
     -fx-background-radius: 15;
     -fx-border-color: #e2e8f0;
     -fx-border-radius: 15;
@@ -180,30 +174,30 @@
     -fx-border-width: 2;
     -fx-border-radius: 10;
     -fx-background-radius: 10;
-    -fx-font-size: 20px; /* Texte plus gros */
+    -fx-font-size: 20px;
     -fx-padding: 15;
 }
 .cart-input:focused {
     -fx-border-color: #d97706;
 }
 
-/* === QUANTITÉ (GROS BOUTONS RONDS TACTILES) === */
+/* === QUANTITÉ === */
 .quantity-box {
     -fx-alignment: center;
-    -fx-spacing: 15; /* Espace entre les éléments */
+    -fx-spacing: 15;
 }
 
 .btn-quantity {
     -fx-background-color: white;
     -fx-text-fill: #1e293b;
     -fx-font-weight: bold;
-    -fx-font-size: 24px; /* Gros symbole */
-    /* FORME RONDE FIXE */
+    -fx-font-size: 24px;
+
     -fx-min-width: 50px;
     -fx-min-height: 50px;
     -fx-max-width: 50px;
     -fx-max-height: 50px;
-    -fx-background-radius: 25px; /* Cercle */
+    -fx-background-radius: 25px;
     -fx-border-color: #cbd5e1;
     -fx-border-radius: 25px;
     -fx-cursor: hand;
@@ -216,7 +210,7 @@
 }
 
 .label-quantity {
-    -fx-font-size: 24px; /* Chiffre bien gros */
+    -fx-font-size: 24px;
     -fx-font-weight: bold;
     -fx-text-fill: #0f172a;
     -fx-alignment: center;
